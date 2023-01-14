@@ -1,0 +1,35 @@
+# Stundenangabe (05 meint 5Uhr) | -- = Encoder startet beim nächsten Aufruf des Scriptes
+start_at=--
+# test=-to 00:00:20.000
+
+# Video Encoder                     #1
+v_encoders=copy                                                                     #0 Kopie
+v_encoders=libx264 -profile:v high -tune film                                       #1
+v_encoders=libx265 -profile:v main                                                  #2
+
+# Video Encoderkomprimierung        #2
+v_presets=superfast                                                                 #0
+v_presets=veryfast                                                                  #1
+v_presets=fast                                                                      #2
+v_presets=medium                                                                    #3
+v_presets=slow                                                                      #4
+v_presets=veryslow                                                                  #5
+v_presets=placebo                                                                   #6
+
+# FFMPEG Video Filter               #3
+v_filters=None                                                                      #0  # Kein Video Filter
+v_filters=-sws_flags lanczos -vf scale=1024:576,crop=768:576,setdar=4/3             #1  # Raumschiff Enterprise
+v_filters=-sws_flags lanczos -vf scale=1024:576,crop=1024:424:0:76                  #2  # Star Trek - Picard
+v_filters=-sws_flags lanczos -vf scale=1024:576                                     #3  # TV Recording
+
+# Video Encoder Qualität            #4
+v_quality=-crf 20                                                                   #0  # SD/HD
+v_quality=-crf 26                                                                   #1  # BluRay
+
+# Audio Encoder                     #5
+a_encoders=copy                                                                     #0 Kopie
+
+# Datei Erweiterungen               #6
+f_extension=mp4                                                                     #0
+f_extension=mkv                                                                     #1
+f_extension=mov                                                                     #2
