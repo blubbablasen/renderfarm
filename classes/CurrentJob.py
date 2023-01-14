@@ -1,4 +1,4 @@
-class Current_Job:
+class CurrentJob:
     def __init__(self, job_id):
         self.__job_id = job_id
         self.__full_file_name = None

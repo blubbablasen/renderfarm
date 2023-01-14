@@ -5,42 +5,6 @@ from sys import argv
 from shlex import quote
 import json
 
-
-class AudioStream:
-    def __init__(self, index, codec_name, codec_long_name, codec_type, codec_time_base, codec_tag_string, codec_tag, sample_fmt, sample_rate, channels,
-        channel_layout, bits_per_sample, dmix_mode, ltrt_cmixlev, ltrt_surmixlev, loro_cmixlev, loro_surmixlev, id, r_frame_rate, avg_frame_rate, time_base,
-        start_pts, start_time, duration_ts, duration, bit_rate, disposition, tags):
-
-        self.__index = index
-        self.__codec_name = codec_name
-        self.__codec_long_name = codec_long_name
-        self.__codec_type = codec_type
-        self.__codec_time_base = codec_time_base
-        self.__codec_tag_string = codec_tag_string
-        self.__codec_tag = codec_tag
-        self.__sample_fmt = sample_fmt
-        self.__sample_rate = sample_rate
-        self.__channels = channels
-        self.__channel_layout = channel_layout
-        self.__bits_per_sample = bits_per_sample
-        self.__dmix_mode = dmix_mode
-        self.__ltrt_cmixlev = ltrt_cmixlev
-        self.__ltrt_surmixlev = ltrt_surmixlev
-        self.__loro_cmixlev = loro_cmixlev
-        self.__loro_surmixlev = loro_surmixlev
-        self.__id = id
-        self.__r_frame_rate = r_frame_rate
-        self.__avg_frame_rate = avg_frame_rate
-        self.__time_base = time_base
-        self.__start_pts = start_pts
-        self.__start_time = start_time
-        self.__duration_ts = duration_ts
-        self.__duration = duration
-        self.__bit_rate = bit_rate
-        self.__disposition = disposition
-        self.__tags = tags
-
-
 with open("crimson_tide_-_in_tiefster_gefahr_(1995).250001.json", "r") as f:
     data = json.load(f)
 
@@ -50,18 +14,18 @@ audio_list = []
 for stream in data['streams']:
     if stream["codec_type"] == "video":
         for key, value in stream.items():
-            
-        #videostream = VideoStream()
-        #video_list.append(videostream)
+            pass
+            # videostream = VideoStream()
+        # video_list.append(videostream)
 
     elif stream["codec_type"] == "audio":
         pass
-        #print(stream)
-        #for key, value in stream.items():
+        # print(stream)
+        # for key, value in stream.items():
         #    print(key, value)
         #    audiostream = AudioStream()
         #    audio_list.append(audiostream)
- 
+
 '''
 def parse_ffmpeg_cfg():
     cut_list = {}

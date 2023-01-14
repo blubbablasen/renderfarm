@@ -1,0 +1,77 @@
+<?xml version="1.0" standalone="no"?>
+<mlt LC_NUMERIC="C" version="7.13.0" title="Shotcut version 22.12.21" producer="main_bin">
+  <profile description="PAL 4:3 DV or DVD" width="720" height="576" progressive="0" sample_aspect_num="64" sample_aspect_den="45" display_aspect_num="16" display_aspect_den="9" frame_rate_num="25" frame_rate_den="1" colorspace="601"/>
+  <playlist id="main_bin">
+    <property name="xml_retain">1</property>
+  </playlist>
+  <producer id="black" in="00:00:00.000" out="01:46:36.800">
+    <property name="length">01:46:36.840</property>
+    <property name="eof">pause</property>
+    <property name="resource">0</property>
+    <property name="aspect_ratio">1.42222</property>
+    <property name="mlt_service">color</property>
+    <property name="mlt_image_format">rgba</property>
+    <property name="set.test_audio">0</property>
+  </producer>
+  <playlist id="background">
+    <entry producer="black" in="00:00:00.000" out="01:46:36.800"/>
+  </playlist>
+  <chain id="chain0" out="02:05:00.600">
+    <property name="length">02:05:00.640</property>
+    <property name="eof">pause</property>
+    <property name="resource">crimson_tide_-_in_tiefster_gefahr_(1995).ts</property>
+    <property name="mlt_service">avformat-novalidate</property>
+    <property name="seekable">1</property>
+    <property name="audio_index">3</property>
+    <property name="video_index">2</property>
+    <property name="mute_on_pause">0</property>
+    <property name="creation_time">2023-01-13T21:10:00</property>
+    <property name="shotcut:hash">13a4bc5d44cc2e34102e8f5278557ca8</property>
+    <property name="ignore_points">0</property>
+    <property name="shotcut:caption">crimson_tide_-_in_tiefster_gefahr_(1995).ts</property>
+    <property name="xml">was here</property>
+    <filter id="filter0" in="00:10:14.760" out="01:56:51.560">
+      <property name="start">1</property>
+      <property name="level">01:46:35.840=1;01:46:36.800=0</property>
+      <property name="mlt_service">brightness</property>
+      <property name="shotcut:filter">fadeOutBrightness</property>
+      <property name="alpha">1</property>
+      <property name="shotcut:animOut">00:00:01.000</property>
+    </filter>
+    <filter id="filter1" in="00:10:14.760" out="01:56:51.560">
+      <property name="window">75</property>
+      <property name="max_gain">20dB</property>
+      <property name="level">01:46:35.840=0;01:46:36.800=-60</property>
+      <property name="mlt_service">volume</property>
+      <property name="shotcut:filter">fadeOutVolume</property>
+      <property name="shotcut:animOut">00:00:01.000</property>
+    </filter>
+  </chain>
+  <playlist id="playlist0">
+    <property name="shotcut:video">1</property>
+    <property name="shotcut:name">V1</property>
+    <entry producer="chain0" in="00:10:14.760" out="01:56:51.560"/>
+  </playlist>
+  <tractor id="tractor0" title="Shotcut version 22.12.21" in="00:00:00.000" out="01:46:36.800">
+    <property name="shotcut">1</property>
+    <property name="shotcut:projectAudioChannels">2</property>
+    <property name="shotcut:projectFolder">0</property>
+    <track producer="background"/>
+    <track producer="playlist0"/>
+    <transition id="transition0">
+      <property name="a_track">0</property>
+      <property name="b_track">1</property>
+      <property name="mlt_service">mix</property>
+      <property name="always_active">1</property>
+      <property name="sum">1</property>
+    </transition>
+    <transition id="transition1">
+      <property name="a_track">0</property>
+      <property name="b_track">1</property>
+      <property name="version">0.1</property>
+      <property name="mlt_service">frei0r.cairoblend</property>
+      <property name="threads">0</property>
+      <property name="disable">1</property>
+    </transition>
+  </tractor>
+</mlt>
