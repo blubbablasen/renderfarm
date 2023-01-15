@@ -3,7 +3,7 @@ import os
 
 
 # Prüfe ob bereits ein anderer Prozess läuft
-def job_running_is_set(running_file, status_obj, output):
+def another_job_is_running(running_file, status_obj, output):
     if not os.path.exists(running_file):
         output.append("Info:\t\tEs läuft kein anderer FFMPEG-Prozess.")
         status_obj.set_job_is_running(False)
@@ -31,7 +31,7 @@ def ffmpeg_cfg_found(ffmpeg_cfg_file, status_obj, output):
 
 
 # Lese die FFMPEG Konfigurationsdatei ein
-def parse_ffmpeg_cfg(ffmpeg_cfg_file, ffmpeg_obj, status_obj):
+def parse_ffmpeg_cfg(ffmpeg_cfg_file, ffmpeg_obj, status_obj, output):
     if status_obj.get_job_is_running() or not status_obj.get_ffmpeg_cfg_found():
         return
 
@@ -62,11 +62,11 @@ def parse_ffmpeg_cfg(ffmpeg_cfg_file, ffmpeg_obj, status_obj):
     ffmpeg_obj.set_a_encoders(a_encoders)
     ffmpeg_obj.set_avail_file_extensions(f_extensions)
     status_obj.set_ffmpeg_parse_cfg(True)
-    info.append("Info:\t\tFFMPEG Konfiguration erfolgreich eingelesen.")
+    output.append("Info:\t\tFFMPEG Konfiguration erfolgreich eingelesen.")
 
 
 # Erstelle eine Filmliste und prüfe ob zum jeweiligen Film eine Shotcut Projektdatei existiert
-def create_film_list(local_mount_path, ffmpeg_obj, status_obj):
+def create_film_list(local_mount_path, ffmpeg_obj, status_obj, output):
     if not status_obj.get_ffmpeg_cfg_found() or not status_obj.get_ffmpeg_parse_cfg() \
             or status_obj.get_job_is_running():
         return
@@ -83,28 +83,29 @@ def create_film_list(local_mount_path, ffmpeg_obj, status_obj):
 
     if len(film_list) >= 1:
         ffmpeg_obj.set_film_list(film_list)
-        info.append("Info:\t\tFilmliste wurde erstellt.")
+        output.append("Info:\t\tFilmliste wurde erstellt.")
         status_obj.set_job_to_do(True)
+    else:
+        output.append("Info:\t\tNichts zu tun. Keine Filmliste.")
+        status_obj.set_job_to_do(False)
+        return
 
     if len(xml_list) >= 1:
         ffmpeg_obj.set_xml_list(xml_list)
-        info.append("Info:\t\tXML-Liste wurde erstellt.")
-    else:
-        info.append("Info:\t\tNichts zu tun. Keine Filmliste.")
-        status_obj.set_job_to_do(False)
+        output.append("Info:\t\tShotcut Projektdatei(en) gefunden.")
 
 
 # Erstelle leere Objekte in der Anzahl der Filme
-def create_jobs_objects(ffmpeg_obj, status_obj):
+def create_jobs_objects(ffmpeg_obj, status_obj, output):
     if not status_obj.get_job_to_do() or not status_obj.get_ffmpeg_parse_cfg():
         return
 
-    import module.class_current_job
+    import classes.CurrentJob
     job_list = []
     for job in range(0, ffmpeg_obj.get_total_films()):
-        job = module.class_current_job.Current_Job(job)
+        job = classes.CurrentJob.CurrentJob(job)
         job_list.append(job)
-    info.append("Info:\t\tJob Objekte wurden erstellt.")
+    output.append("Info:\t\tJob Objekte wurden erstellt.")
     return job_list
 
 
@@ -129,7 +130,7 @@ def show_for_xml_file(local_mount_path, job_liste, ffmpeg_obj, status_obj):
         for xml_file in ffmpeg_obj.get_xml_list():
             if str(job.get_input_film_name() + "." + job.get_ff_parameter() + ".mlt") == str(xml_file):
                 import xml.sax
-                import module.class_shotcut_xml
+                import classes.Shotcut_xml
 
                 # erzeugt ein Parser-Objekt.
                 parser = xml.sax.make_parser()
@@ -138,7 +139,7 @@ def show_for_xml_file(local_mount_path, job_liste, ffmpeg_obj, status_obj):
                 parser.setFeature(xml.sax.handler.feature_namespaces, 0)
 
                 # Erzeuge das Handler-Objekt
-                handler = module.class_shotcut_xml.XMLHandler()
+                handler = classes.Shotcut_xml.XMLHandler()
 
                 # übergibt der Methode setContentHandler() das Handler Objekt
                 parser.setContentHandler(handler)
@@ -170,27 +171,6 @@ def extract_parameter(ffmpeg_obj, job_list, status_obj):
         job.set_output_extension(ffmpeg_obj.get_avail_file_extensions()[int(job.get_ff_parameter()[5:6])])
 
 
-def parse_ffprobe_output(ffprobe_file_info, job, status_obj):
-    if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
-        return
-
-    import module.class_ffprobe_xml
-    import xml.sax
-
-    # erzeugt ein Parser-Objekt.
-    parser = xml.sax.make_parser()
-    # turn off namespaces
-    parser.setFeature(xml.sax.handler.feature_namespaces, 0)
-    # Erzeuge das Handler-Objekt
-    handler = module.class_ffprobe_xml.XMLHandler()
-    # übergibt der Methode setContentHandler() das Handler Objekt
-    parser.setContentHandler(handler)
-    parser.parse(ffprobe_file_info)
-    job.set_input_pix_fmt(handler.get_v_pix_fmt())
-    job.set_input_fps(handler.get_v_frame_rate())
-    job.set_ffprobe_xml_obj(handler)
-
-
 def first_cut_in_out(job, status_obj):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
         return
@@ -213,7 +193,7 @@ def first_cut_in_out(job, status_obj):
     return cut_out, cut_out
 
 
-def grep_file_information(local_mount_path, job_liste, status_obj):
+def grep_file_information(local_mount_path, job_liste, status_obj, output):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
         return
 
@@ -223,12 +203,33 @@ def grep_file_information(local_mount_path, job_liste, status_obj):
         quoted_filename = quote(job.get_full_file_name())
         # Speichere die Filmeigenschaften des aktuellen Jobs in einer Variablen
         ffprobe_file_xml_info = os.popen(
-            f"ffprobe -read_intervals {cut_in}%{cut_out} -v quiet -print_format xml -show_format -show_streams " +
+            f"ffprobe -read_intervals {cut_in}%{cut_out} -v quiet -print_format json -show_format -show_streams " +
             local_mount_path + quoted_filename)
         # Übergebe die Filmeigenschaften und das aktuelle Job-Object an die Funktion parse_ffprobe_output()
-        parse_ffprobe_output(ffprobe_file_xml_info, job, status_obj)
+        #parse_ffprobe_output(ffprobe_file_xml_info, job, status_obj)
 
-    info.append("Info:\t\tEingangseigenschaften der Objekte festgelegt.")
+    output.append("Info:\t\tEingangseigenschaften der Objekte festgelegt.")
+
+
+def parse_ffprobe_output(ffprobe_file_info, job, status_obj):
+    if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
+        return
+
+    import module.class_ffprobe_xml
+    import xml.sax
+
+    # erzeugt ein Parser-Objekt.
+    parser = xml.sax.make_parser()
+    # turn off namespaces
+    parser.setFeature(xml.sax.handler.feature_namespaces, 0)
+    # Erzeuge das Handler-Objekt
+    handler = module.class_ffprobe_xml.XMLHandler()
+    # übergibt der Methode setContentHandler() das Handler Objekt
+    parser.setContentHandler(handler)
+    parser.parse(ffprobe_file_info)
+    job.set_input_pix_fmt(handler.get_v_pix_fmt())
+    job.set_input_fps(handler.get_v_frame_rate())
+    job.set_ffprobe_xml_obj(handler)
 
 
 def calculate_edges_top_down(local_mount_path, job_liste, status_obj):

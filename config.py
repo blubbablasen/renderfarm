@@ -1,16 +1,17 @@
+import os
 from time import localtime
 
 output = []
 
 config = {
     # Lokale Pfade
-    "home_directory_path": "./",
-    "local_mount_path": "../mount/",
-    "ssh_path": "../.ssh/",
+    "home_directory_path": "/home/convert_job/",
+    "local_mount_path": "/home/convert_job/mount/",
+    "ssh_path": "/home/convert_job/.ssh/",
     # Remote Pfade
-    "waiting_files_path": "../mount/waiting/",
-    "progress_files_path": "../mount/progress/",
-    "done_files_path": "../mount/done/",
+    "waiting_files_path": "/home/convert_job/mount/waiting/",
+    "progress_files_path": "/home/convert_job/mount/progress/",
+    "done_files_path": "/home/convert_job/mount/done/",
     # Dateinamen
     "pid_filename": "pidfile",
     "running_filename": "running.pid",
@@ -26,7 +27,7 @@ config = {
     "delay": False,
     "debug": False,
     "ffmpeg_verbose": "-8",
-    "version": "Version 2023011410 - EntwicklungsRelease"
+    "version": "Version 2023011501 - EntwicklungsRelease"
 }
 
 binaries = {

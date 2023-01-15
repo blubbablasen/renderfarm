@@ -1,4 +1,5 @@
-class TestClass:
+import os
+'''class TestClass:
     def __init__(self):
         self.__attr = True
 
@@ -22,3 +23,6 @@ def testfunction(_obj_):
 
 testfunction(obj.set_attr)
 print(obj.get_attr())
+'''
+
+print(os.path.abspath("./"))

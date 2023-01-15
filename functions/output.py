@@ -15,7 +15,7 @@ def verbose(status_obj):
 
     if status_obj.get_terminate_exec():
         if status_obj.get_writing_pid_file():
-            remove_pidfile(config["pid_filename"], status_obj)
+            remove_pidfile(config["pid_filename"], status_obj, output)
             exit("\n\nProgramm wurde vorzeitig beendet.")
     if config["delay"]:
         sleep(2)
