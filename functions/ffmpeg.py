@@ -234,35 +234,66 @@ def parse_ffprobe_output(ffprobe_json_file, job, status_obj):
             # video_list.append(videostream)
 
         elif stream["codec_type"] == "audio":
-            audio_stream = classes.AudioStream.AudioStream()
-            for key, value in stream.items():
-                if key == "index":
-                    audio_stream.set_index(value)
-                elif key == "codec_name":
-                    audio_stream.set_codec_name(value)
-                elif key == "codec_long_name":
-                    audio_stream.set_codec_long_name(value)
-                elif key == "codec_type":
-                    audio_stream.set_codec_type(value)
-                elif key == "codec_time_base":
-                    audio_stream.set_codec_time_base(value)
-                elif key == "codec_tag_string":
-                    audio_stream.set_codec_tag_string(value)
-                elif key == "codec_tag":
-                    audio_stream.set_codec_tag(value)
-                elif key == "sample_fmt":
-                    audio_stream.set_sample_fmt(value)
-                elif key == "sample_rate":
-                    audio_stream.set_sample_rate(value)
-                elif key == "channels":
-                    audio_stream.set_channels(value)
-                elif key == "channel_layout":
-                    audio_stream.set_channel_layout(value)
-                elif key == "bits_per_sample":
-                    audio_stream.set_bits_per_sample(value)
-                elif key == "dmix_mode":
-                    audio_stream.set_dmix_mode(value)
-            audio_list.append(audio_stream)
+            a_stream = classes.AudioStream.AudioStream()
+            for k, v in stream.items():
+                if k == "index":
+                    a_stream.set_index(v)
+                elif k == "codec_name":
+                    a_stream.set_codec_name(v)
+                elif k == "codec_long_name":
+                    a_stream.set_codec_long_name(v)
+                elif k == "codec_type":
+                    a_stream.set_codec_type(v)
+                elif k == "codec_time_base":
+                    a_stream.set_codec_time_base(v)
+                elif k == "codec_tag_string":
+                    a_stream.set_codec_tag_string(v)
+                elif k == "codec_tag":
+                    a_stream.set_codec_tag(v)
+                elif k == "sample_fmt":
+                    a_stream.set_sample_fmt(v)
+                elif k == "sample_rate":
+                    a_stream.set_sample_rate(v)
+                elif k == "channels":
+                    a_stream.set_channels(v)
+                elif k == "channel_layout":
+                    a_stream.set_channel_layout(v)
+                elif k == "bits_per_sample":
+                    a_stream.set_bits_per_sample(v)
+                elif k == "dmix_mode":
+                    a_stream.set_dmix_mode(v)
+                elif k == "ltrt_cmixlev":
+                    a_stream.set_ltrt_cmixlev(v)
+                elif k == "ltrt_surmixlev":
+                    a_stream.set_ltrt_surmixlev(v)
+                elif k == "loro_cmixlev":
+                    a_stream.set_loro_cmixlev(v)
+                elif k == "loro_surmixlev":
+                    a_stream.set_loro_surmixlev(v)
+                elif k == "id":
+                    a_stream.set_id(v)
+                elif k == "r_frame_rate":
+                    a_stream.set_r_frame_rate(v)
+                elif k == "avg_frame_rate":
+                    a_stream.set_avg_frame_rate(v)
+                elif k == "time_base":
+                    a_stream.set_time_base(v)
+                elif k == "start_pts":
+                    a_stream.set_start_pts(v)
+                elif k == "start_time":
+                    a_stream.set_start_time(v)
+                elif k == "duration_ts":
+                    a_stream.set_duration_ts(v)
+                elif k == "duration":
+                    a_stream.set_duration(v)
+                elif k == "bit_rate":
+                    a_stream.set_bit_rate(v)
+                elif k == "disposition":
+                    a_stream.set_disposition(v)
+                elif k == "tags":
+                    a_stream.set_tags(v)
+
+            audio_list.append(a_stream)
     job.set_audio_list(audio_list)
 
 

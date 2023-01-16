@@ -27,7 +27,7 @@ config = {
     "delay": False,
     "debug": False,
     "ffmpeg_verbose": "-8",
-    "version": "Version 2023011601 - EntwicklungsRelease"
+    "version": "Version 2023011602 - EntwicklungsRelease"
 }
 
 binaries = {
