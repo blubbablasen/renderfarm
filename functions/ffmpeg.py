@@ -219,8 +219,6 @@ def parse_ffprobe_output(ffprobe_json_file, job, status_obj):
     import classes.AudioStream
     import json
 
-    # video_stream = classes.VideoStream.VideoStream()
-
     data = json.load(ffprobe_json_file)
 
     video_list = []
@@ -228,10 +226,83 @@ def parse_ffprobe_output(ffprobe_json_file, job, status_obj):
 
     for stream in data['streams']:
         if stream["codec_type"] == "video":
-            for key, value in stream.items():
-                pass
-                # videostream = VideoStream()
-            # video_list.append(videostream)
+            v_stream = classes.VideoStream.VideoStream()
+            for k, v in stream.items():
+                if k == "index": v_stream.set_index(v)
+                elif k == "codec_name":
+                    v_stream.set_codec_name(v)
+                elif k == "codec_long_name":
+                    v_stream.set_codec_long_name(v)
+                elif k == "profile":
+                    v_stream.set_profile(v)
+                elif k == "codec_type":
+                    v_stream.set_codec_type(v)
+                elif k == "codec_time_base":
+                    v_stream.set_codec_time_base(v)
+                elif k == "codec_tag_string":
+                    v_stream.set_codec_tag_string(v)
+                elif k == "codec_tag":
+                    v_stream.set_codec_tag(v)
+                elif k == "width":
+                    v_stream.set_width(v)
+                elif k == "height":
+                    v_stream.set_height(v)
+                elif k == "coded_width":
+                    v_stream.set_coded_width(v)
+                elif k == "coded_height":
+                    v_stream.set_coded_height(v)
+                elif k == "closed_captions":
+                    v_stream.set_closed_captions(v)
+                elif k == "has_b_frames":
+                    v_stream.set_has_b_frames(v)
+                elif k == "sample_aspect_ratio":
+                    v_stream.set_sample_aspect_ratio(v)
+                elif k == "display_aspect_ratio":
+                    v_stream.set_display_aspect_ratio(v)
+                elif k == "pix_fmt":
+                    v_stream.set_pix_fmt(v)
+                elif k == "level":
+                    v_stream.set_level(v)
+                elif k == "color_range":
+                    v_stream.set_color_range(v)
+                elif k == "color_space":
+                    v_stream.set_color_space(v)
+                elif k == "color_transfer":
+                    v_stream.set_color_transfer(v)
+                elif k == "color_primaries":
+                    v_stream.set_color_primaries(v)
+                elif k == "chroma_location":
+                    v_stream.set_chroma_location(v)
+                elif k == "field_order":
+                    v_stream.set_field_order(v)
+                elif k == "refs":
+                    v_stream.set_refs(v)
+                elif k == "is_avc":
+                    v_stream.set_is_avc(v)
+                elif k == "nal_length_size":
+                    v_stream.set_nal_length_size(v)
+                elif k == "id":
+                    v_stream.set_id(v)
+                elif k == "r_frame_rate":
+                    v_stream.set_r_frame_rate(v)
+                elif k == "avg_frame_rate":
+                    v_stream.set_avg_frame_rate(v)
+                elif k == "time_base":
+                    v_stream.set_time_base(v)
+                elif k == "start_pts":
+                    v_stream.set_start_pts(v)
+                elif k == "start_time":
+                    v_stream.set_start_time(v)
+                elif k == "duration_ts":
+                    v_stream.set_duration_ts(v)
+                elif k == "duration":
+                    v_stream.set_duration(v)
+                elif k == "bits_per_raw_sample":
+                    v_stream.set_bits_per_raw_sample(v)
+                elif k == "disposition":
+                    v_stream.set_disposition(v)
+
+            video_list.append(v_stream)
 
         elif stream["codec_type"] == "audio":
             a_stream = classes.AudioStream.AudioStream()
@@ -294,6 +365,8 @@ def parse_ffprobe_output(ffprobe_json_file, job, status_obj):
                     a_stream.set_tags(v)
 
             audio_list.append(a_stream)
+
+    job.set_video_list(video_list)
     job.set_audio_list(audio_list)
 
 

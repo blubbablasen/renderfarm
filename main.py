@@ -116,5 +116,10 @@ if job_liste and config["debug"]:
     for job in job_liste:
         print("\n Job:", job.get_input_film_name())
         job.show()
+        print("\n Container Streams:")
+        for video_stream in job.get_video_list():
+            print()
+            video_stream.show()
         for audio_stream in job.get_audio_list():
+            print()
             audio_stream.show()
