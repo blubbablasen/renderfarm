@@ -92,8 +92,9 @@ grep_file_information(config["local_mount_path"], job_liste, status_obj, output)
 verbose(status_obj)
 
 # Berechne die überflüssigen Ränder der Filme.
-# calculate_edges_top_down(config["local_mount_path"], job_liste, status_obj)
-# verbose(status_obj)
+calculate_edges_top_down(config["local_mount_path"], config['ffmpeg_verbose'], config["debug"],
+                         job_liste, status_obj, output, verbose)
+verbose(status_obj)
 
 # show_fast_results(config["local_mount_path"], job_liste, status_obj)
 # verbose(status_obj)

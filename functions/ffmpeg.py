@@ -190,7 +190,7 @@ def first_cut_in_out(job, status_obj):
         cut_in = "00:01:00.000"
         cut_out = "00:02:00.000"
 
-    return cut_out, cut_out
+    return cut_in, cut_out
 
 
 def grep_file_information(local_mount_path, job_liste, status_obj, output):
@@ -228,7 +228,8 @@ def parse_ffprobe_output(ffprobe_json_file, job, status_obj):
         if stream["codec_type"] == "video":
             v_stream = classes.VideoStream.VideoStream()
             for k, v in stream.items():
-                if k == "index": v_stream.set_index(v)
+                if k == "index":
+                    v_stream.set_index(v)
                 elif k == "codec_name":
                     v_stream.set_codec_name(v)
                 elif k == "codec_long_name":
@@ -370,34 +371,38 @@ def parse_ffprobe_output(ffprobe_json_file, job, status_obj):
     job.set_audio_list(audio_list)
 
 
-def calculate_edges_top_down(local_mount_path, job_liste, status_obj):
+def calculate_edges_top_down(local_mount_path, ffmpeg_verbose, debug, job_liste, status_obj, output, verbose):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
         return
 
-    info.append("Info:\t\tBerechne weg zuschneidende Filmränder.")
-    info.append("\t\tDer Vorgang kann einige Zeit in Anspruch nehmen!\n")
+    output.append("Info:\t\tBerechne weg zuschneidende Filmränder.")
+    output.append("\t\tDer Vorgang kann einige Zeit in Anspruch nehmen!\n")
     verbose(status_obj)
 
     for job in job_liste:
-        height = int(job.get_ffprobe_xml_obj().get_v_height())
-        width = int(job.get_ffprobe_xml_obj().get_v_width())
-        dar = job.get_ffprobe_xml_obj().get_v_display_aspect_ratio()
-        sar = job.get_ffprobe_xml_obj().get_v_sample_aspect_ratio()
+        height = int(job.get_video_list()[0].get_height())
+        width = int(job.get_video_list()[0].get_width())
+        dar = job.get_video_list()[0].get_display_aspect_ratio()
+        sar = job.get_video_list()[0].get_sample_aspect_ratio()
         if width == 720 and height == 576 and dar == "16:9":
             # SD anamorphe Pixel - PAL/NTSC DVD und SD-TV Standards
             width = height // 9 * 16
             job.set_scale_size(f"{width}:{height}")
+            stripe = 200
 
         elif width == 1280 and height == 720 and dar == "16:9":
             # HD quadratische Pixel - HD-TV Standards
             job.set_scale_size(f"{width}:{height}")
+            stripe = 200
 
         elif width == 1920 and height == 1080 and dar == "16:9":
             # FullHD quadratische Pixel BluRay
             job.set_scale_size(f"{width}:{height}")
+            stripe = 400
 
         elif sar == "1:1":
             job.set_scale_size(f"{width}:{height}")
+            stripe = 100
 
         # RückgabeType ist hier ein Tuple,
         # wobei die Funktion nur Index 0 benötigt "in_cut[0]"
@@ -407,20 +412,25 @@ def calculate_edges_top_down(local_mount_path, job_liste, status_obj):
         # Der Vidoschnipsel wird in der Breite beschnitten
         # um evtl. vorkommende TV Logos die idr. oben links oder rechts sind.
         # Sie könnten das Ergebnis der Randberechnung negativ beeinflussen!
-        crop_filter = f"crop=424:{height}:0:200"
 
-        info.append("\t\t-> "+job.get_full_file_name())
+        edges = (width - stripe) // 2
+        # crop_filter = f"crop=424:{height}:0:200"
+        crop_filter = f"crop={stripe}:{height}:{edges}:0"
+
+        output.append("\t\t-> "+job.get_full_file_name())
+        output.append(crop_filter)
         verbose(status_obj)
 
         # Erstelle ein temporären Videoschnipsel.
         # Dafür wird die W Achse auf 424 beschnitten um evtl TV Logo aus der Berechnung
         # zu entfernen.
         os.system(
-            f"ffmpeg -loglevel {config['ffmpeg_verbose']} \
+            f"ffmpeg -loglevel {ffmpeg_verbose} \
             -ss {cut_in} \
             -i {local_mount_path}{quote(job.get_full_file_name())} \
+            -ss 00:00:02.000 \
             -t 00:01:00.000 \
-            -map 0:{job.get_ffprobe_xml_obj().get_v_index()} \
+            -map 0:{job.get_video_list()[0].get_index()} \
             -c:v libx264 -qp 0 -crf 0 \
             -filter_complex \"{crop_filter}, yadif=0:-1:0\" \
             -an \
@@ -447,11 +457,11 @@ def calculate_edges_top_down(local_mount_path, job_liste, status_obj):
         # Übergebe den String dem aktuellen JOB
         job.set_crop(this_crop)
 
-        info.append("\t\t***** "+job.get_crop()+"\n")
+        output.append("\t\t***** "+job.get_crop()+"\n")
         verbose(status_obj)
 
         # Lösche den temporären Videoschnipsel (Im Debug bleibt er erhalten)
-        if not config["debug"]:
+        if not debug:
             os.remove(local_mount_path+"temp/temp.mp4")
         # Schreibe noch alles im Arbeitsspeicher vorhandene auf die Festplatte
         os.popen("sync")
