@@ -27,14 +27,14 @@ class AudioStream:
         self.__duration_ts = None
         self.__duration = None
         self.__bit_rate = None
-        self.__disposition = None
-        self.__tags = None
+        self.__disposition = {}
+        self.__tags = {}
 
     def get_index(self):
         return self.__index
 
     def set_index(self, integer):
-        if isinstance(integer, bool):
+        if isinstance(integer, int):
             self.__index = integer
             return True
         return False
@@ -174,3 +174,140 @@ class AudioStream:
             return True
         return False
 
+    def get_loro_surmixlev(self):
+        return self.__loro_surmixlev
+
+    def set_loro_surmixlev(self, string):
+        if isinstance(string, str):
+            self.__loro_surmixlev = string
+            return True
+        return False
+
+    def get_id(self):
+        return self.__id
+
+    def set_id(self, string):
+        if isinstance(string, str):
+            self.__id = string
+            return True
+        return False
+
+    def get_r_frame_rate(self):
+        return self.__r_frame_rate
+
+    def set_r_frame_rate(self, string):
+        if isinstance(string, str):
+            self.__r_frame_rate = string
+            return True
+        return False
+
+    def get_avg_frame_rate(self):
+        return self.__avg_frame_rate
+
+    def set_avg_frame_rate(self, string):
+        if isinstance(string, str):
+            self.__avg_frame_rate = string
+            return True
+        return False
+
+    def get_time_base(self):
+        return self.__time_base
+
+    def set_time_base(self, string):
+        if isinstance(string, str):
+            self.__time_base = string
+            return True
+        return False
+
+    def get_start_pts(self):
+        return self.__start_pts
+
+    def set_start_pts(self, integer):
+        if isinstance(integer, int):
+            self.__start_pts = integer
+            return True
+        return False
+
+    def get_start_time(self):
+        return self.__start_time
+
+    def set_start_time(self, string):
+        if isinstance(string, str):
+            self.__start_time = string
+            return True
+        return False
+
+    def get_duration_ts(self):
+        return self.__duration_ts
+
+    def set_duration_ts(self, integer):
+        if isinstance(integer, int):
+            self.__duration_ts = integer
+            return True
+        return False
+
+    def get_duration(self):
+        return self.__duration
+
+    def set_duration(self, string):
+        if isinstance(string, str):
+            self.__duration = string
+            return True
+        return False
+
+    def get_bit_rate(self):
+        return self.__bit_rate
+
+    def set_bit_rate(self, string):
+        if isinstance(string, str):
+            self.__bit_rate = string
+            return True
+        return False
+
+    def get_disposition(self):
+        return self.__disposition
+
+    def set_disposition(self, dictionary):
+        if isinstance(dictionary, dict):
+            self.__disposition = dictionary
+            return True
+        return False
+
+    def get_tags(self):
+        return self.__tags
+
+    def set_tags(self, dictionary):
+        if isinstance(dictionary, dict):
+            self.__tags = dictionary
+            return True
+        return False
+
+    def show(self):
+        print(self.__index)
+        print(self.__codec_name)
+        print(self.__codec_long_name)
+        print(self.__codec_type)
+        print(self.__codec_time_base)
+        print(self.__codec_tag_string)
+        print(self.__codec_tag)
+        print(self.__sample_fmt)
+        print(self.__sample_rate)
+        print(self.__channels)
+        print(self.__channel_layout)
+        print(self.__bits_per_sample)
+        print(self.__dmix_mode)
+        print(self.__ltrt_cmixlev)
+        print(self.__ltrt_surmixlev)
+        print(self.__loro_cmixlev)
+        print(self.__loro_surmixlev)
+        print(self.__id)
+        print(self.__r_frame_rate)
+        print(self.__avg_frame_rate)
+        print(self.__time_base)
+        print(self.__start_pts)
+        print(self.__start_time)
+        print(self.__duration_ts)
+        print(self.__duration)
+        print(self.__bit_rate)
+        print(self.__disposition)
+        print(self.__tags)

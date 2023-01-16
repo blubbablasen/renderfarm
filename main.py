@@ -106,7 +106,7 @@ remove_pidfile(config["pid_filename"], status_obj, output)
 verbose(status_obj)
 print("\n\nEnde")
 
-'''if job_liste and config["debug"]:
+if job_liste and config["debug"]:
     print("Programm Konfiguration")
     for key, value in config.items():
         print("\t", key, ": ", value)
@@ -116,5 +116,5 @@ print("\n\nEnde")
     for job in job_liste:
         print("\n Job:", job.get_input_film_name())
         job.show()
-        print("\n ffprobe XML:")
-        job.get_ffprobe_xml_obj().show()'''
+        for audio_stream in job.get_audio_list():
+            audio_stream.show()

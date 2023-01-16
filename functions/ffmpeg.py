@@ -202,34 +202,68 @@ def grep_file_information(local_mount_path, job_liste, status_obj, output):
         # Nicht erlaubte Zeichen für die Shell/Bash maskieren
         quoted_filename = quote(job.get_full_file_name())
         # Speichere die Filmeigenschaften des aktuellen Jobs in einer Variablen
-        ffprobe_file_xml_info = os.popen(
+        ffprobe_json_file = os.popen(
             f"ffprobe -read_intervals {cut_in}%{cut_out} -v quiet -print_format json -show_format -show_streams " +
             local_mount_path + quoted_filename)
         # Übergebe die Filmeigenschaften und das aktuelle Job-Object an die Funktion parse_ffprobe_output()
-        #parse_ffprobe_output(ffprobe_file_xml_info, job, status_obj)
+        parse_ffprobe_output(ffprobe_json_file, job, status_obj)
 
     output.append("Info:\t\tEingangseigenschaften der Objekte festgelegt.")
 
 
-def parse_ffprobe_output(ffprobe_file_info, job, status_obj):
+def parse_ffprobe_output(ffprobe_json_file, job, status_obj):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
         return
 
-    import module.class_ffprobe_xml
-    import xml.sax
+    import classes.VideoStream
+    import classes.AudioStream
+    import json
 
-    # erzeugt ein Parser-Objekt.
-    parser = xml.sax.make_parser()
-    # turn off namespaces
-    parser.setFeature(xml.sax.handler.feature_namespaces, 0)
-    # Erzeuge das Handler-Objekt
-    handler = module.class_ffprobe_xml.XMLHandler()
-    # übergibt der Methode setContentHandler() das Handler Objekt
-    parser.setContentHandler(handler)
-    parser.parse(ffprobe_file_info)
-    job.set_input_pix_fmt(handler.get_v_pix_fmt())
-    job.set_input_fps(handler.get_v_frame_rate())
-    job.set_ffprobe_xml_obj(handler)
+    # video_stream = classes.VideoStream.VideoStream()
+
+    data = json.load(ffprobe_json_file)
+
+    video_list = []
+    audio_list = []
+
+    for stream in data['streams']:
+        if stream["codec_type"] == "video":
+            for key, value in stream.items():
+                pass
+                # videostream = VideoStream()
+            # video_list.append(videostream)
+
+        elif stream["codec_type"] == "audio":
+            audio_stream = classes.AudioStream.AudioStream()
+            for key, value in stream.items():
+                if key == "index":
+                    audio_stream.set_index(value)
+                elif key == "codec_name":
+                    audio_stream.set_codec_name(value)
+                elif key == "codec_long_name":
+                    audio_stream.set_codec_long_name(value)
+                elif key == "codec_type":
+                    audio_stream.set_codec_type(value)
+                elif key == "codec_time_base":
+                    audio_stream.set_codec_time_base(value)
+                elif key == "codec_tag_string":
+                    audio_stream.set_codec_tag_string(value)
+                elif key == "codec_tag":
+                    audio_stream.set_codec_tag(value)
+                elif key == "sample_fmt":
+                    audio_stream.set_sample_fmt(value)
+                elif key == "sample_rate":
+                    audio_stream.set_sample_rate(value)
+                elif key == "channels":
+                    audio_stream.set_channels(value)
+                elif key == "channel_layout":
+                    audio_stream.set_channel_layout(value)
+                elif key == "bits_per_sample":
+                    audio_stream.set_bits_per_sample(value)
+                elif key == "dmix_mode":
+                    audio_stream.set_dmix_mode(value)
+            audio_list.append(audio_stream)
+    job.set_audio_list(audio_list)
 
 
 def calculate_edges_top_down(local_mount_path, job_liste, status_obj):
