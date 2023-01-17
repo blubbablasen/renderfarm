@@ -65,24 +65,71 @@ def parse_ffmpeg_cfg(ffmpeg_cfg_file, ffmpeg_obj, status_obj, output):
     output.append("Info:\t\tFFMPEG Konfiguration erfolgreich eingelesen.")
 
 
-# Erstelle eine Filmliste und prüfe ob zum jeweiligen Film eine Shotcut Projektdatei existiert
-def create_film_list(local_mount_path, ffmpeg_obj, status_obj, output):
+def convert(convert_files_path, ffmpeg_verbose, ffmpeg_obj, status_obj, output):
     if not status_obj.get_ffmpeg_cfg_found() or not status_obj.get_ffmpeg_parse_cfg() \
             or status_obj.get_job_is_running():
         return
 
-    film_list = []
-    xml_list = []
+    for file in os.listdir(convert_files_path):
+        if file[-4:] == ".mlt":
 
-    for file in os.listdir(local_mount_path):
-        if file[-4:] == ".mp4" or file[-4:] == ".mov" or file[-4:] == ".mkv" or file[-3:] == ".ts":
-            film_list.append(file)
+            # Trenne Dateiname von Dateierweiterung
+            name = file.rsplit(sep=".", maxsplit=1)[0]
+
+            import xml.sax
+            import classes.Shotcut_xml
+
+            # erzeugt ein Parser-Objekt.
+            parser = xml.sax.make_parser()
+
+            # turn off namespaces
+            parser.setFeature(xml.sax.handler.feature_namespaces, 0)
+
+            # Erzeuge das Handler-Objekt
+            handler = classes.Shotcut_xml.XMLHandler()
+
+            # übergibt der Methode setContentHandler() das Handler Objekt
+            parser.setContentHandler(handler)
+            parser.parse(str(convert_files_path + file))
+
+            if os.system(
+                    f"ffmpeg -loglevel {ffmpeg_verbose} \
+                    -i {convert_files_path}{quote(handler.get_filename())} \
+                    -ss {handler.get_start()} \
+                    -to {handler.get_end()} \
+                    -map '0:v:?' -map '0:a:?' \
+                    -c:v libx265 -g 1 -x265-params lossless=1 \
+                    -filter_complex \"yadif=0:-1:0\" \
+                    -r 25 \
+                    -c:a copy \
+                    -y {convert_files_path}done/{quote(name)}.mp4"
+            ) == 0:
+                os.popen("sync")
+                # os.remove(convert_files_path+file)
+            else:
+                os.popen("sync")
+
+
+# Erstelle eine Filmliste und prüfe ob zum jeweiligen Film eine Shotcut Projektdatei existiert
+def create_job(edit_files_path, ffmpeg_obj, status_obj, output):
+    if not status_obj.get_ffmpeg_cfg_found() or not status_obj.get_ffmpeg_parse_cfg() \
+            or status_obj.get_job_is_running():
+        return
+
+    job = None
+    job_mlt = None
+
+    for file in os.listdir(edit_files_path):
+        if file[-4:] == ".mp4" or file[-4:] == ".mov" or file[-4:] == ".mkv":
+            job = file
+
+            break
 
         if file[-4:] == ".mlt":
             xml_list.append(file)
 
-    if len(film_list) >= 1:
-        ffmpeg_obj.set_film_list(film_list)
+    if len(edit_list) >= 1:
+        ffmpeg_obj.set_film_list(edit_list)
         output.append("Info:\t\tFilmliste wurde erstellt.")
         status_obj.set_job_to_do(True)
     else:
@@ -102,7 +149,7 @@ def create_jobs_objects(ffmpeg_obj, status_obj, output):
 
     import classes.CurrentJob
     job_list = []
-    for job in range(0, ffmpeg_obj.get_total_films()):
+    for job in range(0, ffmpeg_obj.get_total()):
         job = classes.CurrentJob.CurrentJob(job)
         job_list.append(job)
     output.append("Info:\t\tJob Objekte wurden erstellt.")
@@ -122,11 +169,11 @@ def split_file_name(ffmpeg_obj, job_list, status_obj):
 
 
 # Lese die Shotcut Projektdatei und weise dem jeweiligen Film die Schnittpunkte zu
-def show_for_xml_file(local_mount_path, job_liste, ffmpeg_obj, status_obj):
+def show_for_xml_file(local_mount_path, job_list, ffmpeg_obj, status_obj):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
         return
 
-    for job in job_liste:
+    for job in job_list:
         for xml_file in ffmpeg_obj.get_xml_list():
             if str(job.get_input_film_name() + "." + job.get_ff_parameter() + ".mlt") == str(xml_file):
                 import xml.sax
@@ -152,6 +199,7 @@ def extract_parameter(ffmpeg_obj, job_list, status_obj):
         return
 
     for job in job_list:
+
         # extrahiere Video-Encoder
         job.set_v_encoder(ffmpeg_obj.get_v_encoders()[int(job.get_ff_parameter()[0:1])])
 
@@ -193,11 +241,11 @@ def first_cut_in_out(job, status_obj):
     return cut_in, cut_out
 
 
-def grep_file_information(local_mount_path, job_liste, status_obj, output):
+def grep_file_information(local_mount_path, job_list, status_obj, output):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
         return
 
-    for job in job_liste:
+    for job in job_list:
         cut_in, cut_out = first_cut_in_out(job, status_obj)
         # Nicht erlaubte Zeichen für die Shell/Bash maskieren
         quoted_filename = quote(job.get_full_file_name())
@@ -371,7 +419,12 @@ def parse_ffprobe_output(ffprobe_json_file, job, status_obj):
     job.set_audio_list(audio_list)
 
 
-def calculate_edges_top_down(local_mount_path, ffmpeg_verbose, debug, job_liste, status_obj, output, verbose):
+def convert_video(status_obj, job_list):
+    if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
+        return
+
+
+def calculate_edges_top_down(local_mount_path, ffmpeg_verbose, debug, job_list, status_obj, output, verbose):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
         return
 
@@ -379,7 +432,7 @@ def calculate_edges_top_down(local_mount_path, ffmpeg_verbose, debug, job_liste,
     output.append("\t\tDer Vorgang kann einige Zeit in Anspruch nehmen!\n")
     verbose(status_obj)
 
-    for job in job_liste:
+    for job in job_list:
         height = int(job.get_video_list()[0].get_height())
         width = int(job.get_video_list()[0].get_width())
         dar = job.get_video_list()[0].get_display_aspect_ratio()
@@ -435,6 +488,7 @@ def calculate_edges_top_down(local_mount_path, ffmpeg_verbose, debug, job_liste,
             -filter_complex \"{crop_filter}, yadif=0:-1:0\" \
             -an \
             -y {local_mount_path}temp/temp.mp4")
+        os.popen("sync")
 
         # Berechne an dem Videoschnipsel wie viel Rand oben und unten
         # abgeschnitten werden kann und pack das Ergebnis in 'crop'
@@ -448,6 +502,7 @@ def calculate_edges_top_down(local_mount_path, ffmpeg_verbose, debug, job_liste,
             egrep -o crop=\'.*[0-9]$\' | \
             tail -1")
         crop = str(crop.read())
+        os.popen("sync")
 
         # Wandle die einzelnen Positionen wieder zu einem lesbaren String für FFMPEG
         height = str(int(crop.split(sep=":")[1])-8)
@@ -467,12 +522,12 @@ def calculate_edges_top_down(local_mount_path, ffmpeg_verbose, debug, job_liste,
         os.popen("sync")
 
 
-def show_fast_results(local_mount_path, job_liste, status_obj):
+def show_fast_results(local_mount_path, job_list, status_obj):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do() \
             and not config["debug"]:
        return
 
-    for job in job_liste:
+    for job in job_list:
         # RückgabeType ist hier ein Tuple,
         # wobei die Funktion nur Index 0 benötigt "in_cut[0]"
         cut_in = first_cut_in_out(job, status_obj)[0]

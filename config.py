@@ -9,9 +9,10 @@ config = {
     "local_mount_path": "/home/convert_job/mount/",
     "ssh_path": "/home/convert_job/.ssh/",
     # Remote Pfade
-    "waiting_files_path": "/home/convert_job/mount/waiting/",
-    "progress_files_path": "/home/convert_job/mount/progress/",
-    "done_files_path": "/home/convert_job/mount/done/",
+    "waiting_files_path": "/home/convert_job/mount/00_waiting/",
+    "convert_files_path": "/home/convert_job/mount/01_convert/",
+    "edit_files_path": "/home/convert_job/mount/02_edit/",
+    "done_files_path": "/home/convert_job/mount/03_done/",
     # Dateinamen
     "pid_filename": "pidfile",
     "running_filename": "running.pid",
@@ -27,7 +28,7 @@ config = {
     "delay": False,
     "debug": False,
     "ffmpeg_verbose": "-8",
-    "version": "Version 2023011604 - EntwicklungsRelease"
+    "version": "Version 2023011701 - EntwicklungsRelease"
 }
 
 binaries = {
