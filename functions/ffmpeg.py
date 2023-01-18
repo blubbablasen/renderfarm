@@ -98,7 +98,7 @@ def convert(convert_files_path, ffmpeg_verbose, ffmpeg_obj, status_obj, output):
                     -ss {handler.get_start()} \
                     -to {handler.get_end()} \
                     -map '0:v:?' -map '0:a:?' \
-                    -c:v libx264 -qp 0 -crf 0 -g 1 \
+                    -c:v prores \
                     -filter_complex \"yadif=0:-1:0\" \
                     -r 25 \
                     -c:a copy \
