@@ -79,10 +79,10 @@ def convert(cpath, ffmpeg_verbose, status_obj, output):
     else:
         output.append("Info:\t\tVerzeichnis " + cpath + " wurde gefunden.")
 
-    for file in listdir(cpath):
-        if file[-4:] == ".mlt":
+    for mlt_file in listdir(cpath):
+        if mlt_file[-4:] == ".mlt":
 
-            output.append("Info:\t\tBereite "+file+" zum konvertieren vor.")
+            output.append("Info:\t\tBereite "+mlt_file+" zum konvertieren vor.")
 
             import xml.sax
             import classes.Shotcut_xml
@@ -98,18 +98,26 @@ def convert(cpath, ffmpeg_verbose, status_obj, output):
 
             # übergibt der Methode setContentHandler() das Handler Objekt
             parser.setContentHandler(cjob)
-            parser.parse(str(cpath + file))
+            parser.parse(str(cpath + mlt_file))
             break
+
         else:
             output.append("Info:\t\tKeine Dateien zu konvertieren.")
             return
 
-    if path.isfile(cpath+cjob.get_input_file_name()):
+    if not path.isfile(cpath+cjob.get_input_file_name()):
+        output.append("Warnung:\tDatei " + cjob.get_input_file_name() + " wurde NICHT gefunden!")
+        return
+
+    else:
         output.append("Info:\t\tDatei " + cjob.get_input_file_name() + " wurde gefunden.")
+
+        input_file = quote(cjob.get_input_file_name())
+        output_file = quote(cjob.get_output_file_name())
 
         if system(
                 f"ffmpeg -loglevel {ffmpeg_verbose} \
-                -i {cpath}{quote(cjob.get_input_file_name())} \
+                -i {cpath}{input_file} \
                 -ss {cjob.get_start()} \
                 -to {cjob.get_end()} \
                 -map '0:v:?' -map '0:a:?' \
@@ -117,16 +125,14 @@ def convert(cpath, ffmpeg_verbose, status_obj, output):
                 -filter_complex \"yadif=0:-1:0\" \
                 -r 25 \
                 -c:a copy \
-                -y {cpath}done/{quote(cjob.get_output_file_name())}.mov"
+                -y {cpath}done/{output_file}"
         ) == 0:
             system("sync")
-            remove(cpath + file)
+            remove(cpath + mlt_file)
             remove(cpath + cjob.get_input_file_name())
         else:
+            output("Warnung:\tKonvertierung wurde NICHT mit Status 0 beendet!")
             system("sync")
-
-    else:
-        output.append("Warnung:\tDatei " + cjob.get_input_file_name() + " wurde NICHT gefunden!")
 
 
 # Erstelle eine Filmliste und prüfe ob zum jeweiligen Film eine Shotcut Projektdatei existiert
