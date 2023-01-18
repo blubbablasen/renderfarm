@@ -102,7 +102,7 @@ def convert(convert_files_path, ffmpeg_verbose, ffmpeg_obj, status_obj, output):
                     -filter_complex \"yadif=0:-1:0\" \
                     -r 25 \
                     -c:a copy \
-                    -y {convert_files_path}done/{quote(name)}.mp4"
+                    -y {convert_files_path}done/{quote(name)}.mov"
             ) == 0:
                 os.popen("sync")
                 # os.remove(convert_files_path+file)
