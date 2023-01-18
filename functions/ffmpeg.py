@@ -71,7 +71,7 @@ def convert(cpath, ffmpeg_verbose, status_obj, output):
             or status_obj.get_job_is_running():
         return
 
-    output.append("\nInfo:\t\tDatei-Konvertierung")
+    output.append("Info:\t\tDatei-Konvertierung")
 
     if not path.isdir(cpath):
         output.append("Warnung:\tVerzeichnis " + cpath + " wurde NICHT gefunden!")
@@ -100,6 +100,9 @@ def convert(cpath, ffmpeg_verbose, status_obj, output):
             parser.setContentHandler(cjob)
             parser.parse(str(cpath + file))
             break
+        else:
+            output.append("Info:\t\tKeine Dateien zu konvertieren.")
+            return
 
     if path.isfile(cpath+cjob.get_input_file_name()):
         output.append("Info:\t\tDatei " + cjob.get_input_file_name() + " wurde gefunden.")
