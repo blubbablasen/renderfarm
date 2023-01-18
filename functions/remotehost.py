@@ -40,3 +40,11 @@ def umount_remotehost(local_mount_path, status_obj, output):
         else:
             output.append("Warnung:\tRemote-Dateisystem " + local_mount_path + " konnte nicht ausgehangen werden!")
             status_obj.set_unmount_remotehost(False)
+
+
+def remove_file(file, output):
+    try:
+        os.remove(file)
+        output.append("Info:\t\tDatei ", file, "wurde entfernt.")
+    except:
+        output.append("Warnung:\tDatei", file, "konnte nicht entfernt werden!")

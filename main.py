@@ -10,20 +10,16 @@ from functions.output import verbose
 os.system('clear')
 status_obj = Status()
 
-
 # Übergabeparameter aus dem Terminal (Liste)
 if len(argv) > 1:
     terminal_param(argv, config)
 
-
 # PID
 create_pidfile(config["pid_filename"], status_obj, output)
-
 
 # All OS Binaries are available
 os_env_require(binaries, status_obj, output)
 verbose(status_obj)
-
 
 # Ping Localhost is Online and Remotehost is Online
 ping(config["ip_online_check"], status_obj, output)
@@ -31,21 +27,17 @@ verbose(status_obj)
 ping(config["remotehost"], status_obj, output)
 verbose(status_obj)
 
-
 # Local Mount-directory exist
 local_mountdir_exist(config["local_mount_path"], status_obj, output)
 verbose(status_obj)
-
 
 # Local Mount-directory is free
 local_mountpoint_is_free(config["local_mount_path"], status_obj, output)
 verbose(status_obj)
 
-
 # SSH ID File exist
 ssh_id_file_exist(config["ssh_path"] + config["ssh_id_filename"], status_obj, output)
 verbose(status_obj)
-
 
 # SSH ID File sha256sum is valid
 ssh_sha256sum_calc(config["ssh_path"] + config["ssh_id_filename"],
@@ -53,35 +45,29 @@ ssh_sha256sum_calc(config["ssh_path"] + config["ssh_id_filename"],
                    )
 verbose(status_obj)
 
-
 # Mount Remotehost via SSH
-mount_remotehost(config["ssh_path"]+config["ssh_id_filename"],
+mount_remotehost(config["ssh_path"] + config["ssh_id_filename"],
                  config["remotehost"], config["remotehost_port"],
                  config["remotehost_mountdir"], config["local_mount_path"],
                  status_obj, output)
 verbose(status_obj)
 
-
 # Job running-File is present
-another_job_is_running(config["local_mount_path"]+config["running_filename"],
+another_job_is_running(config["local_mount_path"] + config["running_filename"],
                        status_obj, output)
 verbose(status_obj)
 
-
 # FFMPEG Config found
-ffmpeg_obj = ffmpeg_cfg_found(config["local_mount_path"]+config["ffmpeg_cfg_filename"],
+ffmpeg_obj = ffmpeg_cfg_found(config["local_mount_path"] + config["ffmpeg_cfg_filename"],
                               status_obj, output)
 verbose(status_obj)
 
-
 # Parsing FFMPEG Config
-parse_ffmpeg_cfg(config["local_mount_path"]+config["ffmpeg_cfg_filename"],
+parse_ffmpeg_cfg(config["local_mount_path"] + config["ffmpeg_cfg_filename"],
                  ffmpeg_obj, status_obj, output)
 verbose(status_obj)
 
-
-convert(config["convert_files_path"], config["ffmpeg_verbose"],
-                    ffmpeg_obj, status_obj, output)
+convert(config["convert_files_path"], config["ffmpeg_verbose"], status_obj, output)
 verbose(status_obj)
 
 # Erstelle Filmliste
@@ -90,8 +76,8 @@ verbose(status_obj)
 
 
 # Erstelle Job Liste
-#job_list = create_jobs_objects(ffmpeg_obj, status_obj, output)
-#verbose(status_obj)
+# job_list = create_jobs_objects(ffmpeg_obj, status_obj, output)
+# verbose(status_obj)
 
 
 # Zerteile Dateiname in Filmname, FFMPEG Parameter und Dateiendung
@@ -127,11 +113,9 @@ verbose(status_obj)
 umount_remotehost(config["local_mount_path"], status_obj, output)
 verbose(status_obj)
 
-
 remove_pidfile(config["pid_filename"], status_obj, output)
 verbose(status_obj)
 print("\n\nEnde")
-
 
 '''if job_list and config["debug"]:
     print("Programm Konfiguration")

@@ -15,9 +15,19 @@ class Status:
         self.__job_is_running = False
         self.__ffmpeg_cfg_found = False
         self.__ffmpeg_parse_cfg = False
+        self.__convert_job_to_do = False
         self.__job_to_do = False
         self.__unmount_remotehost = None
         self.__terminate_exec = False
+
+    def get_convert_job_to_do(self):
+        return self.__convert_job_to_do
+
+    def set_convert_job_to_do(self, boolean):
+        if isinstance(boolean, bool):
+            self.__convert_job_to_do = boolean
+            return True
+        return False
 
     def get_competing_application(self):
         return self.__competing_application
@@ -197,6 +207,7 @@ class Status:
         print("\tJob is running\t\t\t->", self.__job_is_running)
         print("\tFFMPEG Config found\t\t->", self.__ffmpeg_cfg_found)
         print("\tFFMPEG parsing Config\t\t->", self.__ffmpeg_parse_cfg, "\n")
+        print("\tConvert Job to do?\t\t->", self.__convert_job_to_do)
         print("\tAnything to do?\t\t\t->", self.__job_to_do)
         print("\tRemotehost unmount\t\t->", self.__unmount_remotehost, "\n")
         print("\tProgramm abgebrochen\t\t->", self.__terminate_exec, "\n\n")

@@ -5,10 +5,11 @@ class XMLHandler(xml.sax.ContentHandler):
     def __init__(self):
         self.__tag = None
         self.__attribute = None
-        self.__filename = None
-        self.__cut_list = []
+        self.__input_file_name = None
+        self.__output_file_name = None
         self.__start = None
         self.__end = None
+        self.__cut_list = []
 
     # Call when an element starts
     def startElement(self, tag, attributes):
@@ -31,7 +32,8 @@ class XMLHandler(xml.sax.ContentHandler):
         # Dateiname
         if self.__tag == "property" and self.__attribute == "resource" \
                 and content.strip() != "" and content != "0":
-            self.__filename = content
+            self.__input_file_name = content
+            self.__output_file_name = self.__input_file_name.rsplit(sep=".", maxsplit=1)[0]+".mov"
 
     def get_cut_list(self):
         return self.__cut_list
@@ -42,5 +44,8 @@ class XMLHandler(xml.sax.ContentHandler):
     def get_end(self):
         return self.__end
 
-    def get_filename(self):
-        return self.__filename
+    def get_input_file_name(self):
+        return self.__input_file_name
+
+    def get_output_file_name(self):
+        return self.__output_file_name

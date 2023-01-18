@@ -1,10 +1,10 @@
 from shlex import quote
-import os
+from os import path, system, listdir, remove, popen
 
 
 # Prüfe ob bereits ein anderer Prozess läuft
 def another_job_is_running(running_file, status_obj, output):
-    if not os.path.exists(running_file):
+    if not path.isfile(running_file):
         output.append("Info:\t\tEs läuft kein anderer FFMPEG-Prozess.")
         status_obj.set_job_is_running(False)
         return
@@ -18,7 +18,7 @@ def ffmpeg_cfg_found(ffmpeg_cfg_file, status_obj, output):
     if status_obj.get_job_is_running():
         return
 
-    if not os.path.exists(ffmpeg_cfg_file):
+    if not path.isfile(ffmpeg_cfg_file):
         output.append("Warnung:\tFFMPEG Konfiguration NICHT gefunden!")
         status_obj.set_ffmpeg_cfg_found(False)
         return
@@ -65,16 +65,24 @@ def parse_ffmpeg_cfg(ffmpeg_cfg_file, ffmpeg_obj, status_obj, output):
     output.append("Info:\t\tFFMPEG Konfiguration erfolgreich eingelesen.")
 
 
-def convert(convert_files_path, ffmpeg_verbose, ffmpeg_obj, status_obj, output):
+# Soll etwas konvertiert und für den Videoschnitt vorbereitet werden?
+def convert(cpath, ffmpeg_verbose, status_obj, output):
     if not status_obj.get_ffmpeg_cfg_found() or not status_obj.get_ffmpeg_parse_cfg() \
             or status_obj.get_job_is_running():
         return
 
-    for file in os.listdir(convert_files_path):
+    output.append("\nInfo:\t\tDatei-Konvertierung")
+
+    if not path.isdir(cpath):
+        output.append("Warnung:\tVerzeichnis " + cpath + " wurde NICHT gefunden!")
+        return
+    else:
+        output.append("Info:\t\tVerzeichnis " + cpath + " wurde gefunden.")
+
+    for file in listdir(cpath):
         if file[-4:] == ".mlt":
 
-            # Trenne Dateiname von Dateierweiterung
-            name = file.rsplit(sep=".", maxsplit=1)[0]
+            output.append("Info:\t\tBereite "+file+" zum konvertieren vor.")
 
             import xml.sax
             import classes.Shotcut_xml
@@ -86,28 +94,36 @@ def convert(convert_files_path, ffmpeg_verbose, ffmpeg_obj, status_obj, output):
             parser.setFeature(xml.sax.handler.feature_namespaces, 0)
 
             # Erzeuge das Handler-Objekt
-            handler = classes.Shotcut_xml.XMLHandler()
+            cjob = classes.Shotcut_xml.XMLHandler()
 
             # übergibt der Methode setContentHandler() das Handler Objekt
-            parser.setContentHandler(handler)
-            parser.parse(str(convert_files_path + file))
+            parser.setContentHandler(cjob)
+            parser.parse(str(cpath + file))
+            break
 
-            if os.system(
-                    f"ffmpeg -loglevel {ffmpeg_verbose} \
-                    -i {convert_files_path}{quote(handler.get_filename())} \
-                    -ss {handler.get_start()} \
-                    -to {handler.get_end()} \
-                    -map '0:v:?' -map '0:a:?' \
-                    -c:v prores \
-                    -filter_complex \"yadif=0:-1:0\" \
-                    -r 25 \
-                    -c:a copy \
-                    -y {convert_files_path}done/{quote(name)}.mov"
-            ) == 0:
-                os.popen("sync")
-                # os.remove(convert_files_path+file)
-            else:
-                os.popen("sync")
+    if path.isfile(cpath+cjob.get_input_file_name()):
+        output.append("Info:\t\tDatei " + cjob.get_input_file_name() + " wurde gefunden.")
+
+        if system(
+                f"ffmpeg -loglevel {ffmpeg_verbose} \
+                -i {cpath}{quote(cjob.get_input_file_name())} \
+                -ss {cjob.get_start()} \
+                -to {cjob.get_end()} \
+                -map '0:v:?' -map '0:a:?' \
+                -c:v prores \
+                -filter_complex \"yadif=0:-1:0\" \
+                -r 25 \
+                -c:a copy \
+                -y {cpath}done/{quote(cjob.get_output_file_name())}.mov"
+        ) == 0:
+            system("sync")
+            remove(cpath + file)
+            remove(cpath + cjob.get_input_file_name())
+        else:
+            system("sync")
+
+    else:
+        output.append("Warnung:\tDatei " + cjob.get_input_file_name() + " wurde NICHT gefunden!")
 
 
 # Erstelle eine Filmliste und prüfe ob zum jeweiligen Film eine Shotcut Projektdatei existiert
