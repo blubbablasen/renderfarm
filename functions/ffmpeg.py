@@ -66,13 +66,13 @@ def parse_ffmpeg_cfg(ffmpeg_cfg_file, ffmpeg_obj, status_obj, output):
 
 
 # Soll etwas konvertiert und für den Videoschnitt vorbereitet werden?
-def convert(cpath, ffmpeg_verbose, status_obj, output):
+def convert_job(cpath, ffmpeg_verbose, status_obj, output):
     if not status_obj.get_ffmpeg_cfg_found() or \
        not status_obj.get_ffmpeg_parse_cfg() or \
        status_obj.get_job_is_running():
         return False
 
-    output.append("Info:\t\tDatei-Konvertierung")
+    output.append("Info:\t\t*** Datei-Konvertierung ***")
 
     # Wenn der Pfad nicht existent, brich die Funktion ab.
     if not path.isdir(cpath):
@@ -92,7 +92,7 @@ def convert(cpath, ffmpeg_verbose, status_obj, output):
         return False
 
     import xml.sax
-    import classes.Shotcut_xml
+    import classes.ShotCutXML
 
     # erzeugt ein Parser-Objekt.
     parser = xml.sax.make_parser()
@@ -101,33 +101,33 @@ def convert(cpath, ffmpeg_verbose, status_obj, output):
     parser.setFeature(xml.sax.handler.feature_namespaces, 0)
 
     # Erzeuge das Handler-Objekt
-    cjob = classes.Shotcut_xml.XMLHandler()
+    shotcut = classes.ShotCutXML.ShotCutXML()
 
     # übergibt der Methode setContentHandler() das Handler Objekt
-    parser.setContentHandler(cjob)
+    parser.setContentHandler(shotcut)
     parser.parse(str(cpath + mlt_file))
 
     # Wenn die zu konvertierende Datei nicht gefunden wird, brich die Funktion ab.
-    if not path.isfile(cpath + cjob.get_input_file_name()):
-        output.append("Warnung:\tDatei " + cjob.get_input_file_name() + " wurde NICHT gefunden!")
+    if not path.isfile(cpath + shotcut.get_input_file_name()):
+        output.append("Warnung:\tDatei " + shotcut.get_input_file_name() + " wurde NICHT gefunden!")
         return False
 
     # Wenn kein Startpunkt oder kein Endpunkt angegeben wurde, brich die Funktion ab
-    if cjob.get_start() is None or cjob.get_end() is None:
+    if shotcut.get_start() is None or shotcut.get_end() is None:
         output.append(
-            "Warning:\tOhne Startpunkt und Endpunkt kann "+cjob.get_input_file_name()+" nicht konvertiert werden."
+            "Warning:\tOhne Startpunkt und Endpunkt kann "+shotcut.get_input_file_name()+" nicht konvertiert werden."
         )
         return False
 
-    output.append("Info:\t\tDatei " + cjob.get_input_file_name() + " wurde gefunden.")
+    output.append("Info:\t\tDatei " + shotcut.get_input_file_name() + " wurde gefunden.")
 
-    input_file = quote(cjob.get_input_file_name())
-    output_file = quote(cjob.get_output_file_name())
+    input_file = quote(shotcut.get_input_file_name())
+    output_file = quote(shotcut.get_output_file_name())
 
     if system(f"ffmpeg -loglevel {ffmpeg_verbose} \
             -i {cpath}{input_file} \
-            -ss {cjob.get_start()} \
-            -to {cjob.get_end()} \
+            -ss {shotcut.get_start()} \
+            -to {shotcut.get_end()} \
             -map '0:v:?' -map '0:a:?' \
             -c:v prores \
             -filter_complex \"yadif=0:-1:0\" \
@@ -137,7 +137,7 @@ def convert(cpath, ffmpeg_verbose, status_obj, output):
 
         system("sync")
         remove(cpath + mlt_file)
-        remove(cpath + cjob.get_input_file_name())
+        remove(cpath + shotcut.get_input_file_name())
     else:
         output.append("Warnung:\tKonvertierung wurde NICHT mit Status 0 beendet!")
         system("sync")
@@ -145,49 +145,85 @@ def convert(cpath, ffmpeg_verbose, status_obj, output):
 
 
 # Erstelle eine Filmliste und prüfe ob zum jeweiligen Film eine Shotcut Projektdatei existiert
-def create_job(edit_files_path, ffmpeg_obj, status_obj, output):
-    if not status_obj.get_ffmpeg_cfg_found() or not status_obj.get_ffmpeg_parse_cfg() \
-            or status_obj.get_job_is_running():
-        return
+def edit_job(epath, status_obj, output):
+    if not status_obj.get_ffmpeg_cfg_found() or \
+       not status_obj.get_ffmpeg_parse_cfg() or \
+       status_obj.get_job_is_running():
+        return False
 
-    job = None
-    job_mlt = None
+    output.append("Info:\t\t*** Datei-Editierung ***")
 
-    for file in os.listdir(edit_files_path):
-        if file[-4:] == ".mp4" or file[-4:] == ".mov" or file[-4:] == ".mkv":
-            job = file
+    # Wenn der Pfad nicht existent, brich die Funktion ab.
+    if not path.isdir(epath):
+        output.append("Warnung:\tVerzeichnis " + epath + " wurde NICHT gefunden!")
+        return False
 
-            break
+    output.append("Info:\t\tVerzeichnis " + epath + " wurde gefunden.")
 
-        if file[-4:] == ".mlt":
-            xml_list.append(file)
+    try:
+        mlt_file = [elem for elem in listdir(epath)
+                    if path.isfile(epath + "/" + elem)
+                    and elem.endswith(".mlt")][0]
+        output.append("Info:\t\tBereite " + mlt_file + " zum editieren vor.")
 
-    if len(edit_list) >= 1:
-        ffmpeg_obj.set_film_list(edit_list)
-        output.append("Info:\t\tFilmliste wurde erstellt.")
-        status_obj.set_job_to_do(True)
-    else:
-        output.append("Info:\t\tNichts zu tun. Keine Filmliste.")
-        status_obj.set_job_to_do(False)
-        return
+    except IndexError:
+        output.append("Info:\t\tKeine Dateien zu editieren.")
+        return False
 
-    if len(xml_list) >= 1:
-        ffmpeg_obj.set_xml_list(xml_list)
-        output.append("Info:\t\tShotcut Projektdatei(en) gefunden.")
+    import xml.sax
+    import classes.ShotCutXML
+
+    # erzeugt ein Parser-Objekt.
+    parser = xml.sax.make_parser()
+
+    # turn off namespaces
+    parser.setFeature(xml.sax.handler.feature_namespaces, 0)
+
+    # Erzeuge das Handler-Objekt
+    shotcut = classes.ShotCutXML.ShotCutXML()
+
+    # übergibt der Methode setContentHandler() das Handler Objekt
+    parser.setContentHandler(shotcut)
+    parser.parse(str(epath + mlt_file))
+
+    # Wenn die zu konvertierende Datei nicht gefunden wird, brich die Funktion ab.
+    if not path.isfile(epath + shotcut.get_input_file_name()):
+        output.append("Warnung:\tDatei " + shotcut.get_input_file_name() + " wurde NICHT gefunden!")
+        return False
+
+    import classes.EditJob
+    ejob = classes.EditJob.EditJob()
+
+    ejob.set_cut_parts(shotcut.get_cut_list())
+    ejob.set_full_file_name(shotcut.get_input_file_name())
+    return ejob
 
 
-# Erstelle leere Objekte in der Anzahl der Filme
-def create_jobs_objects(ffmpeg_obj, status_obj, output):
-    if not status_obj.get_job_to_do() or not status_obj.get_ffmpeg_parse_cfg():
-        return
 
-    import classes.CurrentJob
-    job_list = []
-    for job in range(0, ffmpeg_obj.get_total()):
-        job = classes.CurrentJob.CurrentJob(job)
-        job_list.append(job)
-    output.append("Info:\t\tJob Objekte wurden erstellt.")
-    return job_list
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # Teile den Dateinamen in seine Einzelteile und weise dem jeweiligen Film die Eigenschaften zu

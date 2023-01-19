@@ -67,46 +67,17 @@ parse_ffmpeg_cfg(config["local_mount_path"] + config["ffmpeg_cfg_filename"],
                  ffmpeg_obj, status_obj, output)
 verbose(status_obj)
 
-convert(config["convert_files_path"], config["ffmpeg_verbose"], status_obj, output)
+convert_job(config["convert_files_path"], config["ffmpeg_verbose"], status_obj, output)
 verbose(status_obj)
 
-# Erstelle Filmliste
-# create_job(config["edit_files_path"], ffmpeg_obj, status_obj, output)
-# verbose(status_obj)
+ejob_obj = edit_job(config["edit_files_path"], status_obj, output)
+verbose(status_obj)
 
 
-# Erstelle Job Liste
-# job_list = create_jobs_objects(ffmpeg_obj, status_obj, output)
-# verbose(status_obj)
 
 
-# Zerteile Dateiname in Filmname, FFMPEG Parameter und Dateiendung
-# split_file_name(ffmpeg_obj, job_list, status_obj)
-# verbose(status_obj)
 
 
-# show_for_xml_file(config["local_mount_path"], job_list, ffmpeg_obj, status_obj)
-# verbose(status_obj)
-
-
-# Ordne aus den FFMPEG Parametern die Aufgaben zu dem Objekt zu
-# extract_parameter(ffmpeg_obj, job_list, status_obj)
-# verbose(status_obj)
-
-
-# erstelle für jeden Film eine XML-Information, um Eingangseigenschaften des Films festzulegen.
-# grep_file_information(config["local_mount_path"], job_list, status_obj, output)
-# verbose(status_obj)
-
-
-# Berechne die überflüssigen Ränder der Filme.
-# calculate_edges_top_down(config["local_mount_path"], config['ffmpeg_verbose'], config["debug"],
-#                         job_list, status_obj, output, verbose)
-# verbose(status_obj)
-
-
-# show_fast_results(config["local_mount_path"], job_list, status_obj)
-# verbose(status_obj)
 
 
 # Remotehost unmount
@@ -117,21 +88,13 @@ remove_pidfile(config["pid_filename"], status_obj, output)
 verbose(status_obj)
 print("\n\nEnde")
 
-'''if job_list and config["debug"]:
+if config["debug"]:
     print("Programm Konfiguration")
     for key, value in config.items():
         print("\t", key, ": ", value)
 
     print("\nffmpeg Objekt")
     ffmpeg_obj.show()
-    for job in job_list:
-        print("\n Job:", job.get_input_film_name())
-        job.show()
-        print("\n Container Streams:")
-        for video_stream in job.get_video_list():
-            print()
-            video_stream.show()
-        for audio_stream in job.get_audio_list():
-            print()
-            audio_stream.show()
-'''
+
+    print("\nEdit Objekt")
+    ejob_obj.show()

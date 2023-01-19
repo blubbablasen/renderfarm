@@ -1,8 +1,5 @@
 class Ffmpeg:
     def __init__(self):
-        self.__edit_list = []
-        self.__xml_list = []
-        self.__total = 0
         self.__v_encoders = []
         self.__v_presets = []
         self.__v_filters = []
@@ -10,25 +7,6 @@ class Ffmpeg:
         self.__a_encoders = []
         self.__a_filters = []
         self.__avail_extension = []
-
-    def get_xml_list(self):
-        return self.__xml_list
-
-    def set_xml_list(self, xml_list):
-        if isinstance(xml_list, list) and len(xml_list) >= 1:
-            self.__xml_list = xml_list
-            return True
-        return False
-
-    def get_edit_list(self):
-        return self.__edit_list
-
-    def set_edit_list(self, edit_list):
-        if isinstance(edit_list, list) and len(edit_list) >= 1:
-            self.__edit_list = edit_list
-            self.__total = len(edit_list)
-            return True
-        return False
 
     def get_v_qcontrols(self):
         return self.__v_qcontrols
@@ -38,9 +16,6 @@ class Ffmpeg:
             self.__v_qcontrols = liste
             return True
         return False
-
-    def get_total(self):
-        return int(self.__total)
 
     def get_v_encoders(self):
         return self.__v_encoders
@@ -91,9 +66,6 @@ class Ffmpeg:
         return False
 
     def show(self):
-        print("\tEdit-Liste:\t\t\t->", self.__edit_list)
-        print("\tFilme insgesamt:\t\t->", self.__total)
-        print("\tXML Dateien:\t\t\t->", self.__xml_list)
         print("\tVideo-Encoder Liste:\t\t->", self.__v_encoders)
         print("\tVideo-Encoder Presets:\t\t->", self.__v_presets)
         print("\tVideofilter Liste:\t\t->", self.__v_filters)
