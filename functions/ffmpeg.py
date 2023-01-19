@@ -67,72 +67,81 @@ def parse_ffmpeg_cfg(ffmpeg_cfg_file, ffmpeg_obj, status_obj, output):
 
 # Soll etwas konvertiert und für den Videoschnitt vorbereitet werden?
 def convert(cpath, ffmpeg_verbose, status_obj, output):
-    if not status_obj.get_ffmpeg_cfg_found() or not status_obj.get_ffmpeg_parse_cfg() \
-            or status_obj.get_job_is_running():
-        return
+    if not status_obj.get_ffmpeg_cfg_found() or \
+       not status_obj.get_ffmpeg_parse_cfg() or \
+       status_obj.get_job_is_running():
+        return False
 
     output.append("Info:\t\tDatei-Konvertierung")
 
+    # Wenn der Pfad nicht existent, brich die Funktion ab.
     if not path.isdir(cpath):
         output.append("Warnung:\tVerzeichnis " + cpath + " wurde NICHT gefunden!")
-        return
-    else:
-        output.append("Info:\t\tVerzeichnis " + cpath + " wurde gefunden.")
+        return False
 
-    for mlt_file in listdir(cpath):
-        if mlt_file[-4:] == ".mlt":
+    output.append("Info:\t\tVerzeichnis " + cpath + " wurde gefunden.")
 
-            output.append("Info:\t\tBereite "+mlt_file+" zum konvertieren vor.")
+    try:
+        mlt_file = [elem for elem in listdir(cpath)
+                    if path.isfile(cpath + "/" + elem)
+                    and elem.endswith(".mlt")][0]
+        output.append("Info:\t\tBereite " + mlt_file + " zum konvertieren vor.")
 
-            import xml.sax
-            import classes.Shotcut_xml
+    except IndexError:
+        output.append("Info:\t\tKeine Dateien zu konvertieren.")
+        return False
 
-            # erzeugt ein Parser-Objekt.
-            parser = xml.sax.make_parser()
+    import xml.sax
+    import classes.Shotcut_xml
 
-            # turn off namespaces
-            parser.setFeature(xml.sax.handler.feature_namespaces, 0)
+    # erzeugt ein Parser-Objekt.
+    parser = xml.sax.make_parser()
 
-            # Erzeuge das Handler-Objekt
-            cjob = classes.Shotcut_xml.XMLHandler()
+    # turn off namespaces
+    parser.setFeature(xml.sax.handler.feature_namespaces, 0)
 
-            # übergibt der Methode setContentHandler() das Handler Objekt
-            parser.setContentHandler(cjob)
-            parser.parse(str(cpath + mlt_file))
-            break
+    # Erzeuge das Handler-Objekt
+    cjob = classes.Shotcut_xml.XMLHandler()
 
-        else:
-            output.append("Info:\t\tKeine Dateien zu konvertieren.")
-            return
+    # übergibt der Methode setContentHandler() das Handler Objekt
+    parser.setContentHandler(cjob)
+    parser.parse(str(cpath + mlt_file))
 
-    if not path.isfile(cpath+cjob.get_input_file_name()):
+    # Wenn die zu konvertierende Datei nicht gefunden wird, brich die Funktion ab.
+    if not path.isfile(cpath + cjob.get_input_file_name()):
         output.append("Warnung:\tDatei " + cjob.get_input_file_name() + " wurde NICHT gefunden!")
-        return
+        return False
 
+    # Wenn kein Startpunkt oder kein Endpunkt angegeben wurde, brich die Funktion ab
+    if cjob.get_start() is None or cjob.get_end() is None:
+        output.append(
+            "Warning:\tOhne Startpunkt und Endpunkt kann "+cjob.get_input_file_name()+" nicht konvertiert werden."
+        )
+        return False
+
+    output.append("Info:\t\tDatei " + cjob.get_input_file_name() + " wurde gefunden.")
+
+    input_file = quote(cjob.get_input_file_name())
+    output_file = quote(cjob.get_output_file_name())
+
+    if system(f"ffmpeg -loglevel {ffmpeg_verbose} \
+            -i {cpath}{input_file} \
+            -ss {cjob.get_start()} \
+            -to {cjob.get_end()} \
+            -map '0:v:?' -map '0:a:?' \
+            -c:v prores \
+            -filter_complex \"yadif=0:-1:0\" \
+            -r 25 \
+            -c:a copy \
+            -y {cpath}done/{output_file}") == 0:
+
+        system("sync")
+        # remove(cpath + mlt_file)
+        # remove(cpath + cjob.get_input_file_name())
     else:
-        output.append("Info:\t\tDatei " + cjob.get_input_file_name() + " wurde gefunden.")
-
-        input_file = quote(cjob.get_input_file_name())
-        output_file = quote(cjob.get_output_file_name())
-
-        if system(
-                f"ffmpeg -loglevel {ffmpeg_verbose} \
-                -i {cpath}{input_file} \
-                -ss {cjob.get_start()} \
-                -to {cjob.get_end()} \
-                -map '0:v:?' -map '0:a:?' \
-                -c:v prores \
-                -filter_complex \"yadif=0:-1:0\" \
-                -r 25 \
-                -c:a copy \
-                -y {cpath}done/{output_file}"
-        ) == 0:
-            system("sync")
-            remove(cpath + mlt_file)
-            remove(cpath + cjob.get_input_file_name())
-        else:
-            output("Warnung:\tKonvertierung wurde NICHT mit Status 0 beendet!")
-            system("sync")
+        output.append("Warnung:\tKonvertierung wurde NICHT mit Status 0 beendet!")
+        system("sync")
+        return False
 
 
 # Erstelle eine Filmliste und prüfe ob zum jeweiligen Film eine Shotcut Projektdatei existiert
@@ -224,7 +233,6 @@ def extract_parameter(ffmpeg_obj, job_list, status_obj):
         return
 
     for job in job_list:
-
         # extrahiere Video-Encoder
         job.set_v_encoder(ffmpeg_obj.get_v_encoders()[int(job.get_ff_parameter()[0:1])])
 
@@ -495,7 +503,7 @@ def calculate_edges_top_down(local_mount_path, ffmpeg_verbose, debug, job_list, 
         # crop_filter = f"crop=424:{height}:0:200"
         crop_filter = f"crop={stripe}:{height}:{edges}:0"
 
-        output.append("\t\t-> "+job.get_full_file_name())
+        output.append("\t\t-> " + job.get_full_file_name())
         output.append(crop_filter)
         verbose(status_obj)
 
@@ -530,19 +538,19 @@ def calculate_edges_top_down(local_mount_path, ffmpeg_verbose, debug, job_list, 
         os.popen("sync")
 
         # Wandle die einzelnen Positionen wieder zu einem lesbaren String für FFMPEG
-        height = str(int(crop.split(sep=":")[1])-8)
+        height = str(int(crop.split(sep=":")[1]) - 8)
         x_axis = "0"
-        y_axis = str(int(crop.split(sep=":")[3])+4)
-        this_crop = str(width)+":"+height+":"+x_axis+":"+y_axis
+        y_axis = str(int(crop.split(sep=":")[3]) + 4)
+        this_crop = str(width) + ":" + height + ":" + x_axis + ":" + y_axis
         # Übergebe den String dem aktuellen JOB
         job.set_crop(this_crop)
 
-        output.append("\t\t***** "+job.get_crop()+"\n")
+        output.append("\t\t***** " + job.get_crop() + "\n")
         verbose(status_obj)
 
         # Lösche den temporären Videoschnipsel (Im Debug bleibt er erhalten)
         if not debug:
-            os.remove(local_mount_path+"temp/temp.mp4")
+            os.remove(local_mount_path + "temp/temp.mp4")
         # Schreibe noch alles im Arbeitsspeicher vorhandene auf die Festplatte
         os.popen("sync")
 
@@ -550,7 +558,7 @@ def calculate_edges_top_down(local_mount_path, ffmpeg_verbose, debug, job_list, 
 def show_fast_results(local_mount_path, job_list, status_obj):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do() \
             and not config["debug"]:
-       return
+        return
 
     for job in job_list:
         # RückgabeType ist hier ein Tuple,
