@@ -196,96 +196,42 @@ def edit_job(epath, status_obj, output):
 
     ejob.set_cut_parts(shotcut.get_cut_list())
     ejob.set_full_file_name(shotcut.get_input_file_name())
+    status_obj.set_job_to_do(True)
     return ejob
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Teile den Dateinamen in seine Einzelteile und weise dem jeweiligen Film die Eigenschaften zu
-def split_file_name(ffmpeg_obj, job_list, status_obj):
+def split_file_name(ejob_obj, status_obj):
+    if not status_obj.get_ffmpeg_parse_cfg() or \
+       not status_obj.get_job_to_do():
+        return
+
+    ejob_obj.set_input_film_name(str(ejob_obj.get_full_file_name().split(sep=".")[0]))
+    ejob_obj.set_ff_parameter(str(ejob_obj.get_full_file_name().split(sep=".")[1]))
+    ejob_obj.set_input_extension(str(ejob_obj.get_full_file_name().split(sep=".")[2]))
+
+
+def extract_parameter(ffmpeg_obj, ejob_obj, status_obj):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
         return
 
-    for job in job_list:
-        job.set_full_file_name(str(ffmpeg_obj.get_film_list()[job.get_job_id()]))
-        job.set_input_film_name(str(ffmpeg_obj.get_film_list()[job.get_job_id()].split(sep=".")[0]))
-        job.set_ff_parameter(str(ffmpeg_obj.get_film_list()[job.get_job_id()].split(sep=".")[1]))
-        job.set_input_extension(str(ffmpeg_obj.get_film_list()[job.get_job_id()].split(sep=".")[2]))
+    # extrahiere Video-Encoder
+    ejob_obj.set_v_encoder(ffmpeg_obj.get_v_encoders()[int(ejob_obj.get_ff_parameter()[0:1])])
 
+    # extrahiere Video-Encoder Komprimierung
+    ejob_obj.set_v_preset(ffmpeg_obj.get_v_presets()[int(ejob_obj.get_ff_parameter()[1:2])])
 
-# Lese die Shotcut Projektdatei und weise dem jeweiligen Film die Schnittpunkte zu
-def show_for_xml_file(local_mount_path, job_list, ffmpeg_obj, status_obj):
-    if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
-        return
+    # extrahiere Videofilter
+    ejob_obj.set_v_filter(ffmpeg_obj.get_v_filters()[int(ejob_obj.get_ff_parameter()[2:3])])
 
-    for job in job_list:
-        for xml_file in ffmpeg_obj.get_xml_list():
-            if str(job.get_input_film_name() + "." + job.get_ff_parameter() + ".mlt") == str(xml_file):
-                import xml.sax
-                import classes.Shotcut_xml
+    # extrahiere Videoqualität
+    ejob_obj.set_v_qcontrol(ffmpeg_obj.get_v_qcontrols()[int(ejob_obj.get_ff_parameter()[3:4])])
 
-                # erzeugt ein Parser-Objekt.
-                parser = xml.sax.make_parser()
+    # extrahiere Audio-Encoder
+    ejob_obj.set_a_encoder(ffmpeg_obj.get_a_encoders()[int(ejob_obj.get_ff_parameter()[4:5])])
 
-                # turn off namespaces
-                parser.setFeature(xml.sax.handler.feature_namespaces, 0)
-
-                # Erzeuge das Handler-Objekt
-                handler = classes.Shotcut_xml.XMLHandler()
-
-                # übergibt der Methode setContentHandler() das Handler Objekt
-                parser.setContentHandler(handler)
-                parser.parse(str(local_mount_path + xml_file))
-                job.set_cut_parts(handler.get_cut_list())
-
-
-def extract_parameter(ffmpeg_obj, job_list, status_obj):
-    if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
-        return
-
-    for job in job_list:
-        # extrahiere Video-Encoder
-        job.set_v_encoder(ffmpeg_obj.get_v_encoders()[int(job.get_ff_parameter()[0:1])])
-
-        # extrahiere Video-Encoder Komprimierung
-        job.set_v_preset(ffmpeg_obj.get_v_presets()[int(job.get_ff_parameter()[1:2])])
-
-        # extrahiere Videofilter
-        job.set_v_filter(ffmpeg_obj.get_v_filters()[int(job.get_ff_parameter()[2:3])])
-
-        # extrahiere Videoqualität
-        job.set_v_qcontrol(ffmpeg_obj.get_v_qcontrols()[int(job.get_ff_parameter()[3:4])])
-
-        # extrahiere Audio-Encoder
-        job.set_a_encoder(ffmpeg_obj.get_a_encoders()[int(job.get_ff_parameter()[4:5])])
-
-        # extrahiere Dateierweiterung
-        job.set_output_extension(ffmpeg_obj.get_avail_file_extensions()[int(job.get_ff_parameter()[5:6])])
+    # extrahiere Dateierweiterung
+    ejob_obj.set_output_extension(ffmpeg_obj.get_avail_file_extensions()[int(ejob_obj.get_ff_parameter()[5:6])])
 
 
 def first_cut_in_out(job, status_obj):

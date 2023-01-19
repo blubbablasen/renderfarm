@@ -73,8 +73,11 @@ verbose(status_obj)
 ejob_obj = edit_job(config["edit_files_path"], status_obj, output)
 verbose(status_obj)
 
+split_file_name(ejob_obj, status_obj)
+verbose(status_obj)
 
-
+extract_parameter(ffmpeg_obj, ejob_obj, status_obj)
+verbose(status_obj)
 
 
 
