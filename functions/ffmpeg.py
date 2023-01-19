@@ -136,8 +136,8 @@ def convert(cpath, ffmpeg_verbose, status_obj, output):
             -y {cpath}done/{output_file}") == 0:
 
         system("sync")
-        # remove(cpath + mlt_file)
-        # remove(cpath + cjob.get_input_file_name())
+        remove(cpath + mlt_file)
+        remove(cpath + cjob.get_input_file_name())
     else:
         output.append("Warnung:\tKonvertierung wurde NICHT mit Status 0 beendet!")
         system("sync")
