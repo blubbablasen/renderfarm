@@ -499,10 +499,11 @@ def calculate_edges_top_down(epath, ffmpeg_verbose, debug, ejob_obj, status_obj,
         -ss 00:00:02.000 \
         -t 00:01:00.000 \
         -map 0:{ejob_obj.get_video_list()[0].get_index()} \
-        -c:v libx264 -qp 0 -crf 0 \
+        -c:v prores \
         -filter_complex \"{crop_filter}, yadif=0:-1:0\" \
         -an \
-        -y {epath}temp/temp.mp4")
+        -y {epath}temp/temp.mov \
+        >> {epath}temp/temp.log 2>&1")
 
     system("sync")
 
@@ -512,8 +513,8 @@ def calculate_edges_top_down(epath, ffmpeg_verbose, debug, ejob_obj, status_obj,
     # Achsenbeschreibung
     # https://phamvanlam.com/static/6d2e4a57b8a8770d5bf6c3c448490f14/bc51f/ffmpeg-tutorial-crop-video-voi-ffmpeg-phamvanlam.com.png
     crop = popen(
-        f"ffmpeg -i {epath}temp/temp.mp4 \
-        -filter_complex \"cropdetect=24:2:0, yadif=0:-1:0\" \
+        f"ffmpeg -i {epath}temp/temp.mov \
+        -filter_complex \"cropdetect=80:2:0\" \
         -f null - 2>&1 | \
         egrep -o crop=\'.*[0-9]$\' | \
         tail -1")
@@ -533,31 +534,32 @@ def calculate_edges_top_down(epath, ffmpeg_verbose, debug, ejob_obj, status_obj,
 
     # Lösche den temporären Videoschnipsel (Im Debug bleibt er erhalten)
     if not debug:
-        remove(epath + "temp/temp.mp4")
+        remove(epath + "temp/temp.mov")
 
     # Schreibe noch alles im Arbeitsspeicher vorhandene auf die Festplatte
     system("sync")
 
 
-def show_fast_results(local_mount_path, job_list, status_obj):
-    if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do() \
-            and not config["debug"]:
+def show_fast_results(epath, ffmpeg_verbose, debug, ejob_obj, status_obj):
+    if not status_obj.get_ffmpeg_parse_cfg() or \
+       not status_obj.get_job_to_do() and \
+       not debug:
         return
 
-    for job in job_list:
-        # RückgabeType ist hier ein Tuple,
-        # wobei die Funktion nur Index 0 benötigt "in_cut[0]"
-        cut_in = first_cut_in_out(job, status_obj)[0]
-        os.system(
-            f"ffmpeg -loglevel {config['ffmpeg_verbose']} \
-            -ss {cut_in} \
-            -i {local_mount_path}{quote(job.get_full_file_name())} \
-            -t 00:01:00.000 \
-            -map 0:{job.get_ffprobe_xml_obj().get_v_index()} -map 0:{job.get_ffprobe_xml_obj().get_a_index()} \
-            -c:v libx264 -qp 0 -crf 0 \
-            -filter_complex \"scale={job.get_scale_size()}, crop={job.get_crop()}, yadif=0:-1:0\" \
-            -c:a copy\
-            -y {local_mount_path}in_progress/{quote(job.get_output_film_name())}.{quote(job.get_output_extension())} \
-            2>&1 > {local_mount_path}in_progress/{quote(job.get_output_film_name())}.log"
-        )
-        os.popen("sync")
+    # RückgabeType ist hier ein Tuple,
+    # wobei die Funktion nur Index 0 benötigt "in_cut[0]"
+    cut_in = first_cut_in_out(ejob_obj, status_obj)[0]
+    system(
+        f"ffmpeg -loglevel {ffmpeg_verbose} \
+        -ss {cut_in} \
+        -i {epath}{quote(ejob_obj.get_full_file_name())} \
+        -t 00:01:00.000 \
+        -map 0:{ejob_obj.get_video_list()[0].get_index()} \
+        -map 0:{ejob_obj.get_audio_list()[0].get_index()} \
+        -c:v libx264 -g 1 -qp 0 -crf 0 \
+        -filter_complex \"scale={ejob_obj.get_scale_size()}, crop={ejob_obj.get_crop()}, yadif=0:-1:0\" \
+        -c:a copy\
+        -y {epath}in_progress/{quote(ejob_obj.get_output_film_name())}.{quote(ejob_obj.get_output_extension())} \
+        >> {epath}in_progress/{quote(ejob_obj.get_output_film_name())}.log 2>&1")
+
+    popen("sync")
