@@ -79,7 +79,7 @@ verbose(status_obj)
 extract_parameter(ffmpeg_obj, ejob_obj, status_obj)
 verbose(status_obj)
 
-
+grep_file_information(config["edit_files_path"], ejob_obj, status_obj, output)
 
 
 
@@ -99,5 +99,11 @@ if config["debug"]:
     print("\nffmpeg Objekt")
     ffmpeg_obj.show()
 
-    print("\nEdit Objekt")
+    print("\nEdit Objekt: ", ejob_obj.get_full_file_name())
     ejob_obj.show()
+    print("\nVideostreams:")
+    for videostream in ejob_obj.get_video_list():
+        videostream.show()
+    print("\nAudiostreams:")
+    for audiostream in ejob_obj.get_audio_list():
+        audiostream.show()

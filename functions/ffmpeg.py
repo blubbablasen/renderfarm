@@ -234,7 +234,7 @@ def extract_parameter(ffmpeg_obj, ejob_obj, status_obj):
     ejob_obj.set_output_extension(ffmpeg_obj.get_avail_file_extensions()[int(ejob_obj.get_ff_parameter()[5:6])])
 
 
-def first_cut_in_out(job, status_obj):
+def first_cut_in_out(ejob_obj, status_obj):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
         return
 
@@ -246,8 +246,8 @@ def first_cut_in_out(job, status_obj):
         # Der try-Block wird genutzt, da eine DVD oder BluRay idr. nicht
         # geschnitten wird und es zu einem Fehler kommt, wenn auf
         # eine leere Liste zugegriffen wird.
-        cut_in = list(job.get_cut_parts()[0].items())[0][0]
-        cut_out = list(job.get_cut_parts()[0].items())[0][1]
+        cut_in = list(ejob_obj.get_cut_parts()[0].items())[0][0]
+        cut_out = list(ejob_obj.get_cut_parts()[0].items())[0][1]
 
     except IndexError:
         cut_in = "00:01:00.000"
@@ -256,25 +256,30 @@ def first_cut_in_out(job, status_obj):
     return cut_in, cut_out
 
 
-def grep_file_information(local_mount_path, job_list, status_obj, output):
+def grep_file_information(epath, ejob_obj, status_obj, output):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
         return
 
-    for job in job_list:
-        cut_in, cut_out = first_cut_in_out(job, status_obj)
-        # Nicht erlaubte Zeichen für die Shell/Bash maskieren
-        quoted_filename = quote(job.get_full_file_name())
-        # Speichere die Filmeigenschaften des aktuellen Jobs in einer Variablen
-        ffprobe_json_file = os.popen(
-            f"ffprobe -read_intervals {cut_in}%{cut_out} -v quiet -print_format json -show_format -show_streams " +
-            local_mount_path + quoted_filename)
-        # Übergebe die Filmeigenschaften und das aktuelle Job-Object an die Funktion parse_ffprobe_output()
-        parse_ffprobe_output(ffprobe_json_file, job, status_obj)
+    cut_in, cut_out = first_cut_in_out(ejob_obj, status_obj)
+
+    # Nicht erlaubte Zeichen für die Shell/Bash maskieren
+    quoted_filename = quote(ejob_obj.get_full_file_name())
+
+    # Speichere die Filmeigenschaften des aktuellen Jobs in einer Variablen
+    ffprobe_json_file = popen(
+        f"ffprobe -read_intervals {cut_in}%{cut_out} \
+        -v quiet \
+        -print_format json \
+        -show_format \
+        -show_streams " +
+        epath + quoted_filename)
+    # Übergebe die Filmeigenschaften und das aktuelle Job-Object an die Funktion parse_ffprobe_output()
+    parse_ffprobe_output(ffprobe_json_file, ejob_obj, status_obj)
 
     output.append("Info:\t\tEingangseigenschaften der Objekte festgelegt.")
 
 
-def parse_ffprobe_output(ffprobe_json_file, job, status_obj):
+def parse_ffprobe_output(ffprobe_json_file, ejob_obj, status_obj):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
         return
 
@@ -430,13 +435,8 @@ def parse_ffprobe_output(ffprobe_json_file, job, status_obj):
 
             audio_list.append(a_stream)
 
-    job.set_video_list(video_list)
-    job.set_audio_list(audio_list)
-
-
-def convert_video(status_obj, job_list):
-    if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
-        return
+    ejob_obj.set_video_list(video_list)
+    ejob_obj.set_audio_list(audio_list)
 
 
 def calculate_edges_top_down(local_mount_path, ffmpeg_verbose, debug, job_list, status_obj, output, verbose):
