@@ -80,7 +80,10 @@ extract_parameter(ffmpeg_obj, ejob_obj, status_obj)
 verbose(status_obj)
 
 grep_file_information(config["edit_files_path"], ejob_obj, status_obj, output)
-
+verbose(status_obj)
+calculate_edges_top_down(config["edit_files_path"], config["ffmpeg_verbose"],
+                         config["debug"], ejob_obj, status_obj, output, verbose)
+verbose(status_obj)
 
 
 # Remotehost unmount

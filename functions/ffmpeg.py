@@ -439,7 +439,7 @@ def parse_ffprobe_output(ffprobe_json_file, ejob_obj, status_obj):
     ejob_obj.set_audio_list(audio_list)
 
 
-def calculate_edges_top_down(local_mount_path, ffmpeg_verbose, debug, job_list, status_obj, output, verbose):
+def calculate_edges_top_down(epath, ffmpeg_verbose, debug, ejob_obj, status_obj, output, verbose):
     if not status_obj.get_ffmpeg_parse_cfg() or not status_obj.get_job_to_do():
         return
 
@@ -447,94 +447,96 @@ def calculate_edges_top_down(local_mount_path, ffmpeg_verbose, debug, job_list, 
     output.append("\t\tDer Vorgang kann einige Zeit in Anspruch nehmen!\n")
     verbose(status_obj)
 
-    for job in job_list:
-        height = int(job.get_video_list()[0].get_height())
-        width = int(job.get_video_list()[0].get_width())
-        dar = job.get_video_list()[0].get_display_aspect_ratio()
-        sar = job.get_video_list()[0].get_sample_aspect_ratio()
-        if width == 720 and height == 576 and dar == "16:9":
-            # SD anamorphe Pixel - PAL/NTSC DVD und SD-TV Standards
-            width = height // 9 * 16
-            job.set_scale_size(f"{width}:{height}")
-            stripe = 200
+    height = int(ejob_obj.get_video_list()[0].get_height())
+    width = int(ejob_obj.get_video_list()[0].get_width())
+    dar = ejob_obj.get_video_list()[0].get_display_aspect_ratio()
+    sar = ejob_obj.get_video_list()[0].get_sample_aspect_ratio()
 
-        elif width == 1280 and height == 720 and dar == "16:9":
-            # HD quadratische Pixel - HD-TV Standards
-            job.set_scale_size(f"{width}:{height}")
-            stripe = 200
+    if width == 720 and height == 576 and dar == "16:9":
+        # SD anamorphe Pixel - PAL/NTSC DVD und SD-TV Standards
+        width = height // 9 * 16
+        ejob_obj.set_scale_size(f"{width}:{height}")
+        stripe = 200
 
-        elif width == 1920 and height == 1080 and dar == "16:9":
-            # FullHD quadratische Pixel BluRay
-            job.set_scale_size(f"{width}:{height}")
-            stripe = 400
+    elif width == 1280 and height == 720 and dar == "16:9":
+        # HD quadratische Pixel - HD-TV Standards
+        ejob_obj.set_scale_size(f"{width}:{height}")
+        stripe = 200
 
-        elif sar == "1:1":
-            job.set_scale_size(f"{width}:{height}")
-            stripe = 100
+    elif width == 1920 and height == 1080 and dar == "16:9":
+        # FullHD quadratische Pixel BluRay
+        ejob_obj.set_scale_size(f"{width}:{height}")
+        stripe = 400
 
-        # RückgabeType ist hier ein Tuple,
-        # wobei die Funktion nur Index 0 benötigt "in_cut[0]"
-        cut_in = first_cut_in_out(job, status_obj)[0]
+    elif sar == "1:1":
+        ejob_obj.set_scale_size(f"{width}:{height}")
+        stripe = 100
 
-        # Erstelle den Filterstring den FFMPEG-Videoschnipsel
-        # Der Vidoschnipsel wird in der Breite beschnitten
-        # um evtl. vorkommende TV Logos die idr. oben links oder rechts sind.
-        # Sie könnten das Ergebnis der Randberechnung negativ beeinflussen!
+    # RückgabeType ist hier ein Tuple,
+    # wobei die Funktion nur Index 0 benötigt "in_cut[0]"
+    cut_in = first_cut_in_out(ejob_obj, status_obj)[0]
 
-        edges = (width - stripe) // 2
-        # crop_filter = f"crop=424:{height}:0:200"
-        crop_filter = f"crop={stripe}:{height}:{edges}:0"
+    # Erstelle den Filterstring den FFMPEG-Videoschnipsel
+    # Der Vidoschnipsel wird in der Breite beschnitten
+    # um evtl. vorkommende TV Logos die idr. oben links oder rechts sind.
+    # Sie könnten das Ergebnis der Randberechnung negativ beeinflussen!
 
-        output.append("\t\t-> " + job.get_full_file_name())
-        output.append(crop_filter)
-        verbose(status_obj)
+    edges = (width - stripe) // 2
+    # crop_filter = f"crop=424:{height}:0:200"
+    crop_filter = f"crop={stripe}:{height}:{edges}:0"
 
-        # Erstelle ein temporären Videoschnipsel.
-        # Dafür wird die W Achse auf 424 beschnitten um evtl TV Logo aus der Berechnung
-        # zu entfernen.
-        os.system(
-            f"ffmpeg -loglevel {ffmpeg_verbose} \
-            -ss {cut_in} \
-            -i {local_mount_path}{quote(job.get_full_file_name())} \
-            -ss 00:00:02.000 \
-            -t 00:01:00.000 \
-            -map 0:{job.get_video_list()[0].get_index()} \
-            -c:v libx264 -qp 0 -crf 0 \
-            -filter_complex \"{crop_filter}, yadif=0:-1:0\" \
-            -an \
-            -y {local_mount_path}temp/temp.mp4")
-        os.popen("sync")
+    output.append("\t\t-> " + ejob_obj.get_full_file_name())
+    output.append(crop_filter)
+    verbose(status_obj)
 
-        # Berechne an dem Videoschnipsel wie viel Rand oben und unten
-        # abgeschnitten werden kann und pack das Ergebnis in 'crop'
-        # Beispielergebnis crop=424:528:0:0 "w:h:x:y"
-        # Achsenbeschreibung
-        # https://phamvanlam.com/static/6d2e4a57b8a8770d5bf6c3c448490f14/bc51f/ffmpeg-tutorial-crop-video-voi-ffmpeg-phamvanlam.com.png
-        crop = os.popen(
-            f"ffmpeg -i {local_mount_path}temp/temp.mp4 \
-            -filter_complex \"cropdetect=24:2:0, yadif=0:-1:0\" \
-            -f null - 2>&1 | \
-            egrep -o crop=\'.*[0-9]$\' | \
-            tail -1")
-        crop = str(crop.read())
-        os.popen("sync")
+    # Erstelle ein temporären Videoschnipsel.
+    # Dafür wird die W Achse auf 424 beschnitten um evtl TV Logo aus der Berechnung
+    # zu entfernen.
+    system(
+        f"ffmpeg -loglevel {ffmpeg_verbose} \
+        -ss {cut_in} \
+        -i {epath}{quote(ejob_obj.get_full_file_name())} \
+        -ss 00:00:02.000 \
+        -t 00:01:00.000 \
+        -map 0:{ejob_obj.get_video_list()[0].get_index()} \
+        -c:v libx264 -qp 0 -crf 0 \
+        -filter_complex \"{crop_filter}, yadif=0:-1:0\" \
+        -an \
+        -y {epath}temp/temp.mp4")
 
-        # Wandle die einzelnen Positionen wieder zu einem lesbaren String für FFMPEG
-        height = str(int(crop.split(sep=":")[1]) - 8)
-        x_axis = "0"
-        y_axis = str(int(crop.split(sep=":")[3]) + 4)
-        this_crop = str(width) + ":" + height + ":" + x_axis + ":" + y_axis
-        # Übergebe den String dem aktuellen JOB
-        job.set_crop(this_crop)
+    system("sync")
 
-        output.append("\t\t***** " + job.get_crop() + "\n")
-        verbose(status_obj)
+    # Berechne an dem Videoschnipsel wie viel Rand oben und unten
+    # abgeschnitten werden kann und pack das Ergebnis in 'crop'
+    # Beispielergebnis crop=424:528:0:0 "w:h:x:y"
+    # Achsenbeschreibung
+    # https://phamvanlam.com/static/6d2e4a57b8a8770d5bf6c3c448490f14/bc51f/ffmpeg-tutorial-crop-video-voi-ffmpeg-phamvanlam.com.png
+    crop = popen(
+        f"ffmpeg -i {epath}temp/temp.mp4 \
+        -filter_complex \"cropdetect=24:2:0, yadif=0:-1:0\" \
+        -f null - 2>&1 | \
+        egrep -o crop=\'.*[0-9]$\' | \
+        tail -1")
+    crop = str(crop.read())
+    system("sync")
 
-        # Lösche den temporären Videoschnipsel (Im Debug bleibt er erhalten)
-        if not debug:
-            os.remove(local_mount_path + "temp/temp.mp4")
-        # Schreibe noch alles im Arbeitsspeicher vorhandene auf die Festplatte
-        os.popen("sync")
+    # Wandle die einzelnen Positionen wieder zu einem lesbaren String für FFMPEG
+    height = str(int(crop.split(sep=":")[1]) - 8)
+    x_axis = "0"
+    y_axis = str(int(crop.split(sep=":")[3]) + 4)
+    this_crop = str(width) + ":" + height + ":" + x_axis + ":" + y_axis
+    # Übergebe den String dem aktuellen JOB
+    ejob_obj.set_crop(this_crop)
+
+    output.append("\t\t***** " + ejob_obj.get_crop() + "\n")
+    verbose(status_obj)
+
+    # Lösche den temporären Videoschnipsel (Im Debug bleibt er erhalten)
+    if not debug:
+        remove(epath + "temp/temp.mp4")
+
+    # Schreibe noch alles im Arbeitsspeicher vorhandene auf die Festplatte
+    system("sync")
 
 
 def show_fast_results(local_mount_path, job_list, status_obj):
