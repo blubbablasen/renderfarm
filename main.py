@@ -87,7 +87,7 @@ calculate_edges_top_down(config["edit_files_path"], config["ffmpeg_verbose"],
 verbose(status_obj)
 
 show_fast_results(config["edit_files_path"], config["ffmpeg_verbose"],
-                  config["debug"], ejob_obj, status_obj)
+                  config["debug"], ejob_obj, status_obj, output)
 verbose(status_obj)
 
 # Remotehost unmount

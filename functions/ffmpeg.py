@@ -503,7 +503,7 @@ def calculate_edges_top_down(epath, ffmpeg_verbose, debug, ejob_obj, status_obj,
         -filter_complex \"{crop_filter}, yadif=0:-1:0\" \
         -an \
         -y {epath}temp/temp.mov \
-        >> {epath}temp/temp.log 2>&1")
+        > {epath}temp/temp.log 2>&1")
 
     system("sync")
 
@@ -540,7 +540,7 @@ def calculate_edges_top_down(epath, ffmpeg_verbose, debug, ejob_obj, status_obj,
     system("sync")
 
 
-def show_fast_results(epath, ffmpeg_verbose, debug, ejob_obj, status_obj):
+def show_fast_results(epath, ffmpeg_verbose, debug, ejob_obj, status_obj, output):
     if not status_obj.get_ffmpeg_parse_cfg() or \
        not status_obj.get_job_to_do() and \
        not debug:
@@ -556,10 +556,18 @@ def show_fast_results(epath, ffmpeg_verbose, debug, ejob_obj, status_obj):
         -t 00:01:00.000 \
         -map 0:{ejob_obj.get_video_list()[0].get_index()} \
         -map 0:{ejob_obj.get_audio_list()[0].get_index()} \
-        -c:v libx264 -g 1 -qp 0 -crf 0 \
+        -c:v {ejob_obj.get_v_encoder()} \
+        -preset {ejob_obj.get_v_preset()} \
+        -crf {ejob_obj.get_v_qcontrol()} \
+        -pix_fmt {ejob_obj.get_o_pix_fmt()} \
         -filter_complex \"scale={ejob_obj.get_scale_size()}, crop={ejob_obj.get_crop()}, yadif=0:-1:0\" \
         -c:a copy\
+        -r {ejob_obj.get_o_fps()} \
         -y {epath}in_progress/{quote(ejob_obj.get_output_film_name())}.{quote(ejob_obj.get_output_extension())} \
-        >> {epath}in_progress/{quote(ejob_obj.get_output_film_name())}.log 2>&1")
+        > {epath}in_progress/{quote(ejob_obj.get_output_film_name())}.log 2>&1")
 
     popen("sync")
+
+
+def parts():
+    pass

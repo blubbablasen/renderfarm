@@ -15,8 +15,8 @@ class EditJob:
         self.__v_scale_size = None
         self.__a_encoder = None
         self.__a_qcontrol = None
-        self.__o_pix_fmt = None
-        self.__o_fps = None
+        self.__o_pix_fmt = "yuv420p"
+        self.__o_fps = 25
         self.__o_film_name = None
         self.__o_extension = None
 
@@ -95,7 +95,7 @@ class EditJob:
         return False
 
     def get_v_preset(self):
-        return self.__v_encoder
+        return self.__v_preset
 
     def set_v_preset(self, string):
         if isinstance(string, str):
@@ -147,6 +147,12 @@ class EditJob:
             self.__a_encoder = string
             return True
         return False
+
+    def get_o_pix_fmt(self):
+        return self.__o_pix_fmt
+
+    def get_o_fps(self):
+        return self.__o_fps
 
     def get_output_film_name(self):
         return self.__o_film_name
