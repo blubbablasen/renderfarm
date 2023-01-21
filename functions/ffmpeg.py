@@ -549,7 +549,7 @@ def show_fast_results(epath, ffmpeg_verbose, debug, ejob_obj, status_obj, output
     # RückgabeType ist hier ein Tuple,
     # wobei die Funktion nur Index 0 benötigt "in_cut[0]"
     cut_in = first_cut_in_out(ejob_obj, status_obj)[0]
-    system(
+    if system(
         f"ffmpeg -loglevel {ffmpeg_verbose} \
         -ss {cut_in} \
         -i {epath}{quote(ejob_obj.get_full_file_name())} \
@@ -564,8 +564,9 @@ def show_fast_results(epath, ffmpeg_verbose, debug, ejob_obj, status_obj, output
         -c:a copy\
         -r {ejob_obj.get_o_fps()} \
         -y {epath}in_progress/{quote(ejob_obj.get_output_film_name())}.{quote(ejob_obj.get_output_extension())} \
-        > {epath}in_progress/{quote(ejob_obj.get_output_film_name())}.log 2>&1")
-
+        > {epath}in_progress/{quote(ejob_obj.get_output_film_name())}.log 2>&1"
+    ) != 0:
+        output.append("Warnung:\tProzess beendete sich mit einem Fehler.")
     popen("sync")
 
 
